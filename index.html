@@ -363,22 +363,40 @@
         });
       },
 
-      async handleAutoName() {
+     async handleAutoName() {
         const c = this.els.inClass.value.trim();
         const s = this.els.inSeat.value.trim();
+        
+        // 1. 基本檢查：沒填班級或座號就不查
         if (!c || !s) return;
 
+        // 2. 顯示轉圈圈
         this.els.nameLoading.classList.remove('hidden');
+        
         try {
+          // 3. 呼叫後端 API
           const res = await API.getStudentName(c, s);
+          
+          // 4. 判斷結果
           if (res.status === 'success' && res.data.name) {
+            // A. 查到了！填入姓名並顯示綠色提示
             this.els.inName.value = res.data.name;
             this.toast(`找到學生：${res.data.name}`, 'success');
+          } else {
+            // B. 連線成功，但資料庫說沒這個人 (新增這段！)
+            this.toast(`查無此人 (班級:${c} 座號:${s})`, 'error');
+            // 如果您希望查不到時清空姓名欄，可把下面這行註解打開
+            // this.els.inName.value = ''; 
           }
-        } catch (e) { console.error(e); }
+        } catch (e) { 
+          // C. 連線本身出錯 (例如網址錯、CORS 錯誤)
+          console.error(e); 
+          this.toast('查詢發生錯誤，請檢查連線', 'error');
+        }
+        
+        // 5. 隱藏轉圈圈
         this.els.nameLoading.classList.add('hidden');
       },
-
       handleAdd() {
         const vals = {
           班級: this.els.inClass.value.trim(),
