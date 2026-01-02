@@ -285,8 +285,10 @@
              console.error(e);
              UI.toast('寫入資料庫失敗', 'error');
           });
-       }
-      };
+      },
+      async createEmcee(text) { return this.post({ action: 'create_emcee_doc', text }); },
+      async createAward(rows) { return this.post({ action: 'create_award_doc', rows }); }
+    }; // ✅ 修正：補上了這個分號，API 物件正確結束
 
     const UI = {
       els: {},
@@ -359,6 +361,8 @@
         };
 
         if (!vals.班級 || !vals.座號 || !vals.姓名) return this.toast('請完整填寫班級、座號與姓名', 'error');
+        
+        // ✅ 修正：先檢查重複
         const isDuplicate = State.rows.some(r => 
             r.班級 === vals.班級 && 
             r.座號 === vals.座號 && 
@@ -369,10 +373,10 @@
             return this.toast('重複警告：該學生與事由已在清單中！', 'error');
         }
 
+        // ✅ 沒重複才加入
         State.add(vals);
         API.addRecordDB(vals);
         
-        // 貼心功能：保留班級，只清空其他
         this.els.inSeat.value = ''; this.els.inName.value = '';
         this.els.inReason.value = ''; this.els.inRank.value = '';
         this.toast('已加入清單', 'success');
