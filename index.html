@@ -277,13 +277,15 @@
       async getStudentName(cls, seat) { return this.post({ action: 'get_student_name', class: cls, seat: seat }); },
       async getHistory() { return this.post({ action: 'get_history' }); },
       async addRecordDB(record) {
-        this.post({ action: 'add_record', ...record }).then(res => {
-          if(res.status !== 'success') UI.toast('寫入資料庫失敗', 'error');
-        });
+        this.post({ action: 'add_record', ...record })
+          .then(res => {
+            if(res.status !== 'success') UI.toast('寫入資料庫失敗', 'error');
+          })
+          .catch(e => {
+             console.error(e);
+             UI.toast('寫入資料庫失敗', 'error');
+          });
       },
-      async createEmcee(text) { return this.post({ action: 'create_emcee_doc', text }); },
-      async createAward(rows) { return this.post({ action: 'create_award_doc', rows }); }
-    };
 
     const UI = {
       els: {},
