@@ -510,24 +510,25 @@
           document.getElementById('modalPanel').classList.remove('opacity-0', 'translate-y-4', 'sm:translate-y-0', 'sm:scale-95');
         });
 
-        // Setup Buttons
+ // Setup Buttons
         const btn = this.els.modalActionBtn;
         btn.onclick = async () => {
           btn.disabled = true; 
+          // 把原本的 icon 存起來，以便還原
+          const originalContent = btn.innerHTML;
           btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> 處理中...';
-          try { await actionCallback(); } catch(e){ UI.toast('執行失敗','error'); }
-          btn.disabled = false;
-          btn.innerHTML = '<i class="fa-regular fa-share-from-square"></i> 匯出';
+          
+          try { 
+            await actionCallback(); 
+          } catch(e){ 
+            UI.toast('執行過程發生異常，但文件可能已產出','error'); 
+            console.error(e);
+          } finally {
+            // ✅ 新增這一段：無論成功或失敗，最後一定會執行這裡
+            btn.disabled = false;
+            btn.innerHTML = originalContent;
+          }
         };
-
-        const copyBtn = this.els.modalCopyBtn;
-        if(rawText) {
-          copyBtn.classList.remove('hidden');
-          copyBtn.onclick = () => { navigator.clipboard.writeText(rawText); UI.toast('已複製文字','success'); };
-        } else {
-          copyBtn.classList.add('hidden');
-        }
-      },
 
       closeModal() {
          document.getElementById('modalBackdrop').classList.add('opacity-0');
