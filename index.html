@@ -301,7 +301,10 @@
              State.rows.forEach(r => r.checked = e.target.checked);
              this.renderList();
         };
-
+        this.els.inDate.valueAsDate = new Date();
+        const handleEnter = (e) => { if(e.key === 'Enter') this.handleAdd(); };
+        this.els.inReward.addEventListener('keydown', handleEnter);
+        this.els.inRank.addEventListener('keydown', handleEnter);
         this.checkConnection();
         this.renderList();
       },
