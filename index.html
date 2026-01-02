@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>校園榮譽頒獎文件系統 v2.1</title>
+  <title>校園榮譽頒獎文件系統 v2.3</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
   
@@ -33,7 +33,7 @@
       <div>
         <h1 class="text-2xl md:text-3xl font-bold text-slate-900 flex items-center gap-2">
           <i class="fa-solid fa-school text-brand-600"></i>
-          校園榮譽頒獎系統 <span class="text-xs bg-brand-100 text-brand-700 px-2 py-1 rounded-full">v2.1</span>
+          校園榮譽頒獎系統 <span class="text-xs bg-brand-100 text-brand-700 px-2 py-1 rounded-full">v2.3</span>
         </h1>
         <p class="text-slate-500 text-sm mt-1">自動化產生司儀稿與獎懲建議單</p>
       </div>
@@ -356,9 +356,11 @@
         State.add(vals);
         API.addRecordDB(vals);
         
-        this.els.inClass.value = ''; this.els.inSeat.value = ''; this.els.inName.value = '';
+        // 貼心功能：保留班級，只清空其他
+        this.els.inSeat.value = ''; this.els.inName.value = '';
         this.els.inReason.value = ''; this.els.inRank.value = '';
         this.toast('已加入清單', 'success');
+        this.els.inSeat.focus();
       },
 
       renderList() {
@@ -422,7 +424,6 @@
         });
       },
 
-      // ✅ 修正：已補回大括號，語法正確
       openModal(title, htmlContent, actionCallback, rawText = null) {
         this.els.modalTitle.textContent = title;
         this.els.modalContent.innerHTML = htmlContent;
@@ -513,7 +514,7 @@
           setTimeout(() => div.remove(), 300);
         }, 3000);
       }
-    }; // 👈 這裡就是補上的大括號！
+    }; // ✅ 這裡已經完全正確
 
     document.addEventListener('DOMContentLoaded', () => UI.init());
   </script>
