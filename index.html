@@ -366,7 +366,7 @@
       async handleAutoName() {
         const c = this.els.inClass.value.trim();
         const s = this.els.inSeat.value.trim();
-        if (!c || !s || this.els.inName.value) return;
+        if (!c || !s) return;
 
         this.els.nameLoading.classList.remove('hidden');
         try {
