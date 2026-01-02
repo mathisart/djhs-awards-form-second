@@ -353,6 +353,15 @@
         };
 
         if (!vals.班級 || !vals.座號 || !vals.姓名) return this.toast('請完整填寫班級、座號與姓名', 'error');
+        const isDuplicate = State.rows.some(r => 
+            r.班級 === vals.班級 && 
+            r.座號 === vals.座號 && 
+            r.事由 === vals.事由
+        );
+
+        if (isDuplicate) {
+            return this.toast('重複警告：該學生與事由已在清單中！', 'error');
+        }
 
         State.add(vals);
         API.addRecordDB(vals);
