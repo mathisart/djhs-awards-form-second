@@ -132,7 +132,7 @@
 
   <script>
     // ⚠️⚠️⚠️ 請在此填入您的 GAS 部署網址 (以 /exec 結尾) ⚠️⚠️⚠️
-    const GAS_URL = "https://script.google.com/macros/s/您的ID/exec"; 
+    const GAS_URL = "https://script.google.com/macros/s/AKfycbyFQEigHVBMAVJMfkl6WDqrCm5Ur1RmDik6fz2_gJokBpx47KldAbhMHj86NLrMWvEP/exec"; 
 
     const Utils = { uuid:()=>crypto.randomUUID().split('-')[0], formatDate:(d)=>{if(!d)return'';const date=new Date(d);return isNaN(date)?d:date.toISOString().split('T')[0]}, getRankWeight:(r)=>{if(!r)return 999;const m={'金':10,'銀':20,'銅':30,'特優':40,'優等':50,'甲':60,'佳':70,'第一':1,'第二':2,'第三':3};for(let k in m)if(r.includes(k))return m[k];return 100} };
     const State = { rows:[], history:[], add(r){this.rows.unshift({...r,id:Utils.uuid(),checked:true});UI.renderList()}, remove(id){this.rows=this.rows.filter(r=>r.id!==id);UI.renderList()}, clear(){this.rows=[];UI.renderList()}, toggleCheck(id,s){const r=this.rows.find(x=>x.id===id);if(r)r.checked=s}, getChecked(){return this.rows.filter(r=>r.checked)} };
