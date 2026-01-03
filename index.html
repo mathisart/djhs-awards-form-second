@@ -30,7 +30,7 @@
       <div>
         <h1 class="text-2xl md:text-3xl font-bold text-slate-900 flex items-center gap-2">
           <i class="fa-solid fa-school text-brand-600"></i>
-          校園榮譽頒獎系統 <span class="text-xs bg-brand-100 text-brand-700 px-2 py-1 rounded-full">Web v4.7</span>
+          校園榮譽頒獎系統 <span class="text-xs bg-brand-100 text-brand-700 px-2 py-1 rounded-full">Web v4.8</span>
         </h1>
         <a id="dbLink" href="#" target="_blank" class="hidden text-xs text-brand-600 hover:underline ml-2">
           <i class="fa-solid fa-database"></i> 資料庫
@@ -173,7 +173,6 @@
                           <span id="histInfo" class="px-2 py-1.5 bg-slate-50 rounded">頁碼</span>
                           <button id="histNext" class="px-3 py-1.5 bg-slate-100 rounded hover:bg-slate-200 disabled:opacity-50"><i class="fa-solid fa-chevron-right"></i></button>
                       </div>
-                      
                       <button id="histBatchBtn" class="w-full sm:w-auto px-4 py-2 bg-brand-600 hover:bg-brand-700 text-white rounded-lg font-medium shadow-sm flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed">
                           <i class="fa-solid fa-reply-all"></i> 複製選取項目 (<span id="histBatchCount">0</span>)
                       </button>
@@ -222,7 +221,6 @@
         this.els.btnAward.onclick=()=>this.handleAwardPreview();
         this.els.checkAll.onchange=(e)=>{State.rows.forEach(r=>r.checked=e.target.checked);this.renderList()};
         
-        // 歷史紀錄相關事件
         this.els.histPrev.onclick=()=>{if(State.historyPage>1){State.historyPage--;this.renderHistoryList()}};
         this.els.histNext.onclick=()=>{
             const filtered = this.getFilteredHistory();
@@ -337,7 +335,6 @@
         this.els.modalFooter.appendChild(closeBtn);
       },
 
-      // 🔥🔥🔥 歷史紀錄 升級區 🔥🔥🔥
       async openHistory(){
          this.els.historyModal.classList.remove('hidden'); 
          this.els.historyList.innerHTML='<div class="p-8 text-center text-slate-500"><i class="fa-solid fa-spinner fa-spin"></i> 載入中...</div>';
@@ -345,8 +342,14 @@
          
          try{
              const res = await API.getHistory();
-             // 將每筆資料預設加上 checked: false 屬性，用於批次選取
-             State.history = res.data.records.map(r => ({...r, checked: false})); 
+             // 🔥 關鍵修正：確保每一筆資料都有唯一 ID，避免勾選衝突
+             // 若後端有傳回 編號 (id)，就使用編號，否則生成臨時 ID (避免舊資料沒 ID)
+             State.history = res.data.records.map(r => ({
+                 ...r, 
+                 tempId: r['編號'] || Utils.uuid(), 
+                 checked: false
+             })); 
+             
              State.historyPage = 1;
              this.renderHistoryList();
          } catch(e){
@@ -354,7 +357,6 @@
          }
       },
       
-      // 過濾歷史紀錄
       getFilteredHistory() {
           if(!State.histSearchQuery) return State.history;
           return State.history.filter(r => 
@@ -362,10 +364,8 @@
           );
       },
 
-      // 渲染歷史列表 (含搜尋、分頁、Checkbox、顏色標籤)
       renderHistoryList() {
         const filtered = this.getFilteredHistory();
-        
         if(!filtered.length) { 
             this.els.historyList.innerHTML = '<div class="p-8 text-center text-slate-400">查無資料</div>'; 
             this.els.historyPagination.classList.add('hidden');
@@ -376,15 +376,14 @@
         const end = start + State.itemsPerPage;
         const pageData = filtered.slice(start, end);
 
-        this.els.historyList.innerHTML = pageData.map((r, index) => {
-            // 計算全域索引，以便更新 State.history 中正確的 checked 狀態
-            // 注意：這裡簡化處理，直接用資料比對或 ID (若有) 會更穩，這裡用簡易方式
+        this.els.historyList.innerHTML = pageData.map((r) => {
             const isChecked = r.checked ? 'checked' : '';
             const rewardColor = r.獎懲種類.includes('嘉獎') ? 'text-emerald-600 bg-emerald-50' : (r.獎懲種類.includes('小功') ? 'text-orange-600 bg-orange-50' : 'text-slate-600 bg-slate-100');
 
+            // 🔥 關鍵修正：使用 tempId 來做勾選，確保唯一性
             return `
             <div class="p-3 border-b border-slate-100 hover:bg-slate-50 flex items-center gap-3 transition-colors group">
-                <input type="checkbox" ${isChecked} onchange="UI.toggleHistCheck('${r.姓名}','${r.事由}', this.checked)" class="w-5 h-5 rounded text-brand-600 cursor-pointer">
+                <input type="checkbox" ${isChecked} onchange="UI.toggleHistCheck('${r.tempId}', this.checked)" class="w-5 h-5 rounded text-brand-600 cursor-pointer">
                 <div class="flex-1">
                     <div class="flex items-center gap-2">
                         <span class="font-bold text-slate-800">${r.班級} ${r.姓名}</span>
@@ -397,21 +396,18 @@
             </div>`;
         }).join('');
 
-        // 更新分頁與批次按鈕狀態
         this.els.historyPagination.classList.remove('hidden');
         const totalPages = Math.ceil(filtered.length / State.itemsPerPage);
         this.els.histInfo.textContent = `第 ${State.historyPage} / ${totalPages} 頁`;
         this.els.histPrev.disabled = State.historyPage === 1;
         this.els.histNext.disabled = end >= filtered.length;
-        
         this.updateBatchBtn();
       },
 
-      toggleHistCheck(name, reason, checked) {
-          // 簡單的比對方式 (實務上最好有 ID)
-          State.history.forEach(r => {
-              if(r.姓名 === name && r.事由 === reason) r.checked = checked;
-          });
+      // 🔥 關鍵修正：改用 ID 尋找
+      toggleHistCheck(id, checked) {
+          const target = State.history.find(r => r.tempId === id);
+          if(target) target.checked = checked;
           this.updateBatchBtn();
       },
 
@@ -427,23 +423,25 @@
       batchCopyHistory() {
           const selected = State.history.filter(r => r.checked);
           if(selected.length === 0) return;
-          
           selected.forEach(r => {
-              // 移除 checked 屬性再加入列表
-              const { checked, ...data } = r; 
-              State.add({...data, checked: true}); // 加入主列表時預設勾選
+              const { checked, tempId, ...data } = r; 
+              State.add({...data, checked: true});
           });
-          
           this.els.historyModal.classList.add('hidden');
           this.toast(`已成功複製 ${selected.length} 筆資料`, 'success');
       },
 
-      copyHist(r){ State.add({...r, checked: true}); this.els.historyModal.classList.add('hidden'); this.toast('已複製','success'); },
+      copyHist(r){ 
+          const { checked, tempId, ...data } = r;
+          State.add({...data, checked: true}); 
+          this.els.historyModal.classList.add('hidden'); 
+          this.toast('已複製','success'); 
+      },
+      
       closeHistory(){this.els.historyModal.classList.add('hidden')},
       toast(m,t){const d=document.createElement('div');d.className=`fixed bottom-5 right-5 px-4 py-3 rounded text-white shadow ${t==='success'?'bg-emerald-600':'bg-rose-500'}`;d.innerHTML=m;document.body.appendChild(d);setTimeout(()=>d.remove(),3000)}
     };
     
-    // 將 toggleHistCheck 綁定到 UI 物件上以便 HTML onclick 呼叫
     window.UI = UI; 
     document.addEventListener('DOMContentLoaded',()=>UI.init());
   </script>
