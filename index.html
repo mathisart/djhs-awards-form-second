@@ -30,7 +30,7 @@
       <div>
         <h1 class="text-2xl md:text-3xl font-bold text-slate-900 flex items-center gap-2">
           <i class="fa-solid fa-school text-brand-600"></i>
-          校園榮譽頒獎系統 <span class="text-xs bg-brand-100 text-brand-700 px-2 py-1 rounded-full">Web v4.5</span>
+          校園榮譽頒獎系統 <span class="text-xs bg-brand-100 text-brand-700 px-2 py-1 rounded-full">Web v4.6</span>
         </h1>
         <a id="dbLink" href="#" target="_blank" class="hidden text-xs text-brand-600 hover:underline ml-2">
           <i class="fa-solid fa-database"></i> 資料庫
@@ -141,7 +141,8 @@
                     <h3 class="text-xl font-bold text-slate-900" id="modalTitle">預覽</h3>
                     <div class="mt-4 max-h-[60vh] overflow-y-auto custom-scroll p-4 bg-slate-50 rounded-lg text-sm text-slate-600" id="modalContent"></div>
                 </div>
-                <div id="modalFooter" class="bg-slate-50 px-4 py-3 sm:flex sm:flex-row sm:justify-end sm:px-6 gap-2 flex-wrap items-center"></div>
+                <div id="modalFooter" class="bg-slate-50 px-4 py-3 sm:flex sm:flex-row sm:justify-end sm:px-6 gap-2 flex-wrap items-center">
+                    </div>
             </div>
         </div>
     </div>
@@ -241,18 +242,29 @@
         document.getElementById('emptyState').classList.toggle('hidden',f.length!==0);
       },
 
-      // 🔥🔥🔥 司儀稿：預覽時直接顯示所有按鈕 🔥🔥🔥
+      // 🔥🔥🔥 司儀稿重點修改：加入「榮獲」與「結尾詞」 🔥🔥🔥
       handleEmceePreview() {
         const sel = State.getChecked();
         if(!sel.length) return this.toast('請至少勾選一筆','error');
         
         const grp={}; sel.forEach(r=>{if(!grp[r.事由])grp[r.事由]=[];grp[r.事由].push(r)});
         let text = '';
-        for(let k in grp) text+=`${k}：\n`+grp[k].sort((a,b)=>Utils.getRankWeight(a.成績)-Utils.getRankWeight(b.成績)).map(x=>`${x.班級} ${x.姓名}`).join('、')+'。\n\n';
+        for(let k in grp) {
+            // 排序
+            const list = grp[k].sort((a,b)=>Utils.getRankWeight(a.成績)-Utils.getRankWeight(b.成績));
+            // 格式化：班級 姓名 榮獲 成績
+            const names = list.map(x => {
+                const awardText = x.成績 ? ` 榮獲 ${x.成績}` : '';
+                return `${x.班級} ${x.姓名}${awardText}`;
+            }).join('、');
+            
+            // 組合：事由 + 名單 + 恭請校長頒獎
+            text += `${k}：\n${names}。\n恭請校長頒獎。\n\n`;
+        }
         
         this.openModal('司儀稿預覽', text.replace(/\n/g,'<br>'));
         
-        // 直接顯示：[複製文字] [Google Doc] [PDF] [關閉]
+        // 直覺操作按鈕
         this.renderButtons([
             { label: '複製文字', click: () => { navigator.clipboard.writeText(text); this.toast('已複製文字','success'); }, icon: 'copy', color: 'green' },
             { 
@@ -270,7 +282,7 @@
         ]);
       },
 
-      // 🔥🔥🔥 敘獎單：預覽時直接顯示所有按鈕 🔥🔥🔥
+      // 🔥🔥🔥 敘獎單邏輯 🔥🔥🔥
       handleAwardPreview() {
         const sel = State.getChecked();
         if(!sel.length) return this.toast('請至少勾選一筆','error');
@@ -278,7 +290,7 @@
         const text = sel.map(r=>`${r.班級}-${r.座號} ${r.姓名} (${r.獎懲種類})`).join('<br>');
         this.openModal('敘獎單預覽', text);
         
-        // 直接顯示：[試算表] [PDF] [關閉]
+        // 直覺操作按鈕
         this.renderButtons([
             { 
               label: '建立並開啟試算表', 
@@ -295,19 +307,16 @@
         ]);
       },
 
-      // 核心：按下按鈕後 -> 呼叫API -> 開啟對應連結
+      // 核心執行邏輯
       executeAndOpen(type, format, data, btnElement) {
-         // 1. 鎖定按鈕避免重複點擊
          const originalText = btnElement.innerHTML;
          btnElement.disabled = true;
          btnElement.innerHTML = `<i class="fa-solid fa-circle-notch fa-spin"></i> 處理中...`;
 
-         // 2. 呼叫 API (後端其實一次產生兩個連結，我們前端決定開哪個)
          const apiCall = type === 'emcee' ? API.createEmcee(data) : API.createAward(data);
          
          apiCall.then(res => {
              if(res.status === 'success') {
-                 // 3. 成功後開啟網址
                  const url = format === 'pdf' ? res.data.pdfUrl : res.data.docUrl;
                  window.open(url, '_blank');
                  this.toast('檔案已開啟', 'success');
@@ -317,7 +326,6 @@
          }).catch(e => {
              this.toast('系統錯誤', 'error');
          }).finally(() => {
-             // 4. 恢復按鈕
              btnElement.disabled = false;
              btnElement.innerHTML = originalText;
          });
@@ -343,13 +351,12 @@
             btn.className = `inline-flex w-full sm:w-auto justify-center rounded-md ${colorClass} px-3 py-2 text-sm font-semibold text-white shadow-sm gap-2 items-center`;
             btn.innerHTML = `<i class="fa-solid fa-${cfg.icon}"></i> ${cfg.label}`;
             
-            if (cfg.click) btn.onclick = () => cfg.click(btn); // 傳入 btn 本身以便控制 loading 狀態
+            if (cfg.click) btn.onclick = () => cfg.click(btn);
             else btn.onclick = () => window.open(cfg.url, '_blank');
             
             this.els.modalFooter.appendChild(btn);
         });
 
-        // 關閉按鈕
         const closeBtn = document.createElement('button');
         closeBtn.className = "inline-flex w-full sm:w-auto justify-center rounded-md bg-white px-3 py-2 text-sm font-semibold text-slate-900 shadow-sm ring-1 ring-inset ring-slate-300 hover:bg-slate-50";
         closeBtn.textContent = "關閉";
