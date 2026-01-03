@@ -3,7 +3,8 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>校園榮譽頒獎系統 (PRO版)</title>
+  <title>校園榮譽頒獎文件產出系統</title>
+  
   <script src="https://cdn.tailwindcss.com"></script>
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
   <link rel="icon" href="https://cdn-icons-png.flaticon.com/512/1903/1903172.png">
@@ -29,9 +30,11 @@
     <header class="flex flex-col md:flex-row md:items-center justify-between mb-8 gap-4">
       <div>
         <h1 class="text-2xl md:text-3xl font-bold text-slate-900 flex items-center gap-2">
-          <i class="fa-solid fa-school text-brand-600"></i>
-          校園榮譽頒獎系統 <span class="text-xs bg-brand-100 text-brand-700 px-2 py-1 rounded-full">Web v4.8</span>
+          <span class="text-3xl">🏫</span>
+          校園榮譽頒獎文件產出系統 
+          <span class="text-xs bg-brand-100 text-brand-700 px-2 py-1 rounded-full">v4.9</span>
         </h1>
+        
         <a id="dbLink" href="#" target="_blank" class="hidden text-xs text-brand-600 hover:underline ml-2">
           <i class="fa-solid fa-database"></i> 資料庫
         </a>
@@ -204,7 +207,8 @@
       async getStudentName(c,s){return this.post({action:'get_student_name',class:c,seat:s})},
       async getHistory(){return this.post({action:'get_history'})},
       async addRecordDB(r){this.post({action:'add_record',...r}).catch(e=>UI.toast('寫入失敗','error'))},
-      async createEmcee(rows){ return this.post({action:'create_emcee_doc', rows: rows}) },      async createAward(r){return this.post({action:'create_award_doc',rows:r})},
+      async createEmcee(rows){ return this.post({action:'create_emcee_doc', rows: rows}) },
+      async createAward(r){return this.post({action:'create_award_doc',rows:r})},
       async getSheetUrl(){return this.post({action:'get_sheet_url'})}
     };
 
@@ -277,20 +281,19 @@
         
         this.openModal('司儀稿預覽', text.replace(/\n/g,'<br>'));
         
-        // 👇 修改重點：executeAndOpen 的第三個參數，改傳 `sel` (原始陣列)，而不是 `text`
         this.renderButtons([
             { label: '複製文字', click: () => { navigator.clipboard.writeText(text); this.toast('已複製文字','success'); }, icon: 'copy', color: 'green' },
             { 
               label: '建立並開啟 Google 文件', 
               icon: 'file-word', 
               color: 'blue', 
-              click: (btn) => this.executeAndOpen('emcee', 'doc', sel, btn) // 👈 這裡改成 sel
+              click: (btn) => this.executeAndOpen('emcee', 'doc', sel, btn)
             },
             { 
               label: '建立並開啟 PDF', 
               icon: 'file-pdf', 
               color: 'red', 
-              click: (btn) => this.executeAndOpen('emcee', 'pdf', sel, btn) // 👈 這裡改成 sel
+              click: (btn) => this.executeAndOpen('emcee', 'pdf', sel, btn)
             }
         ]);
       },
