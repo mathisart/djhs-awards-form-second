@@ -10,7 +10,7 @@
   
   <script>
     // 👇👇👇 請將您的 GAS 部署網址 (以 /exec 結尾) 貼在這裡 👇👇👇
-    const GAS_URL = "https://script.google.com/macros/s/AKfycbyFQEigHVBMAVJMfkl6WDqrCm5Ur1RmDik6fz2_gJokBpx47KldAbhMHj86NLrMWvEP/exec";
+    const GAS_URL = "https://script.google.com/macros/s/AKfycbyFQEigHVBMAVJMfkl6WDqrCm5Ur1RmDik6fz2_gJokBpx47KldAbhMHj86NLrMWvEP/exec;
   </script>
   <script>
     tailwind.config = {
@@ -30,7 +30,7 @@
       <div>
         <h1 class="text-2xl md:text-3xl font-bold text-slate-900 flex items-center gap-2">
           <i class="fa-solid fa-school text-brand-600"></i>
-          校園榮譽頒獎系統 <span class="text-xs bg-brand-100 text-brand-700 px-2 py-1 rounded-full">Web v4.3</span>
+          校園榮譽頒獎系統 <span class="text-xs bg-brand-100 text-brand-700 px-2 py-1 rounded-full">Web v4.5</span>
         </h1>
         <a id="dbLink" href="#" target="_blank" class="hidden text-xs text-brand-600 hover:underline ml-2">
           <i class="fa-solid fa-database"></i> 資料庫
@@ -136,23 +136,47 @@
     <div class="fixed inset-0 bg-slate-900/50 backdrop-blur-sm" id="modalBackdrop"></div>
     <div class="fixed inset-0 z-10 overflow-y-auto">
         <div class="flex min-h-full items-end justify-center p-4 sm:items-center sm:p-0">
-            <div class="relative bg-white rounded-lg shadow-xl sm:w-full sm:max-w-2xl" id="modalPanel">
+            <div class="relative bg-white rounded-lg shadow-xl sm:w-full sm:max-w-3xl" id="modalPanel">
                 <div class="bg-white px-4 pb-4 pt-5 sm:p-6">
                     <h3 class="text-xl font-bold text-slate-900" id="modalTitle">預覽</h3>
                     <div class="mt-4 max-h-[60vh] overflow-y-auto custom-scroll p-4 bg-slate-50 rounded-lg text-sm text-slate-600" id="modalContent"></div>
                 </div>
-                <div id="modalFooter" class="bg-slate-50 px-4 py-3 sm:flex sm:flex-row sm:px-6 gap-2 flex-wrap items-center">
-                    </div>
+                <div id="modalFooter" class="bg-slate-50 px-4 py-3 sm:flex sm:flex-row sm:justify-end sm:px-6 gap-2 flex-wrap items-center"></div>
             </div>
         </div>
     </div>
   </div>
 
-  <div id="historyModal" class="fixed inset-0 z-40 hidden"><div class="fixed inset-0 bg-slate-900/50 backdrop-blur-sm" onclick="UI.closeHistory()"></div><div class="fixed inset-0 z-10 overflow-y-auto pointer-events-none"><div class="flex min-h-full items-center justify-center p-4"><div class="pointer-events-auto relative bg-white rounded-xl shadow-2xl w-full max-w-4xl max-h-[80vh] flex flex-col"><div class="p-4 border-b flex justify-between items-center"><h3 class="text-lg font-bold text-slate-800">歷史紀錄</h3><button onclick="UI.closeHistory()"><i class="fa-solid fa-xmark"></i></button></div><div class="p-0 overflow-y-auto custom-scroll flex-1 bg-slate-50" id="historyList"></div></div></div></div></div>
+  <div id="historyModal" class="fixed inset-0 z-40 hidden">
+      <div class="fixed inset-0 bg-slate-900/50 backdrop-blur-sm" onclick="UI.closeHistory()"></div>
+      <div class="fixed inset-0 z-10 overflow-y-auto pointer-events-none">
+          <div class="flex min-h-full items-center justify-center p-4">
+              <div class="pointer-events-auto relative bg-white rounded-xl shadow-2xl w-full max-w-4xl max-h-[80vh] flex flex-col">
+                  <div class="p-4 border-b flex justify-between items-center">
+                      <h3 class="text-lg font-bold text-slate-800">歷史紀錄</h3>
+                      <button onclick="UI.closeHistory()"><i class="fa-solid fa-xmark text-xl text-slate-400 hover:text-slate-600"></i></button>
+                  </div>
+                  <div class="p-0 overflow-y-auto custom-scroll flex-1 bg-slate-50" id="historyList"></div>
+                  <div id="historyPagination" class="p-3 border-t bg-white flex justify-between items-center text-sm text-slate-600 hidden">
+                      <button id="histPrev" class="px-3 py-1 bg-slate-100 rounded hover:bg-slate-200 disabled:opacity-50"><i class="fa-solid fa-chevron-left"></i> 上一頁</button>
+                      <span id="histInfo">第 1 頁</span>
+                      <button id="histNext" class="px-3 py-1 bg-slate-100 rounded hover:bg-slate-200 disabled:opacity-50">下一頁 <i class="fa-solid fa-chevron-right"></i></button>
+                  </div>
+              </div>
+          </div>
+      </div>
+  </div>
 
   <script>
     const Utils = { uuid:()=>crypto.randomUUID().split('-')[0], formatDate:(d)=>{if(!d)return'';const date=new Date(d);return isNaN(date)?d:date.toISOString().split('T')[0]}, getRankWeight:(r)=>{if(!r)return 999;const m={'金':10,'銀':20,'銅':30,'特優':40,'優等':50,'甲':60,'佳':70,'第一':1,'第二':2,'第三':3};for(let k in m)if(r.includes(k))return m[k];return 100} };
-    const State = { rows:[], history:[], add(r){this.rows.unshift({...r,id:Utils.uuid(),checked:true});UI.renderList()}, remove(id){this.rows=this.rows.filter(r=>r.id!==id);UI.renderList()}, clear(){this.rows=[];UI.renderList()}, toggleCheck(id,s){const r=this.rows.find(x=>x.id===id);if(r)r.checked=s}, getChecked(){return this.rows.filter(r=>r.checked)} };
+    const State = { 
+        rows:[], history:[], historyPage: 1, itemsPerPage: 10,
+        add(r){this.rows.unshift({...r,id:Utils.uuid(),checked:true});UI.renderList()}, 
+        remove(id){this.rows=this.rows.filter(r=>r.id!==id);UI.renderList()}, 
+        clear(){this.rows=[];UI.renderList()}, 
+        toggleCheck(id,s){const r=this.rows.find(x=>x.id===id);if(r)r.checked=s}, 
+        getChecked(){return this.rows.filter(r=>r.checked)} 
+    };
     
     const API = {
       async post(payload) {
@@ -173,7 +197,7 @@
     const UI = {
       els: {},
       init() {
-        ['inClass','inSeat','inName','inDate','inReason','inRank','inReward','btnAdd','tableBody','mobileList','q','btnEmcee','btnAward','btnClear','statusBadge','modal','modalTitle','modalContent','modalFooter','historyModal','historyList','nameLoading','checkAll','dbLink'].forEach(id=>this.els[id]=document.getElementById(id));
+        ['inClass','inSeat','inName','inDate','inReason','inRank','inReward','btnAdd','tableBody','mobileList','q','btnEmcee','btnAward','btnClear','statusBadge','modal','modalTitle','modalContent','modalFooter','historyModal','historyList','historyPagination','histPrev','histNext','histInfo','nameLoading','checkAll','dbLink'].forEach(id=>this.els[id]=document.getElementById(id));
         this.els.btnAdd.onclick=()=>this.handleAdd();
         this.els.btnClear.onclick=()=>{if(confirm('清空？'))State.clear()};
         this.els.inClass.onblur=this.els.inSeat.onblur=()=>this.handleAutoName();
@@ -181,6 +205,8 @@
         this.els.btnEmcee.onclick=()=>this.handleEmceePreview();
         this.els.btnAward.onclick=()=>this.handleAwardPreview();
         this.els.checkAll.onchange=(e)=>{State.rows.forEach(r=>r.checked=e.target.checked);this.renderList()};
+        this.els.histPrev.onclick=()=>{if(State.historyPage>1){State.historyPage--;this.renderHistoryList()}};
+        this.els.histNext.onclick=()=>{if(State.historyPage*State.itemsPerPage<State.history.length){State.historyPage++;this.renderHistoryList()}};
         this.els.inDate.valueAsDate=new Date();
         this.checkConnection(); this.renderList();
       },
@@ -215,7 +241,7 @@
         document.getElementById('emptyState').classList.toggle('hidden',f.length!==0);
       },
 
-      // 🔥🔥🔥 重大修改：司儀稿全自動模式 🔥🔥🔥
+      // 🔥🔥🔥 司儀稿：預覽時直接顯示所有按鈕 🔥🔥🔥
       handleEmceePreview() {
         const sel = State.getChecked();
         if(!sel.length) return this.toast('請至少勾選一筆','error');
@@ -224,104 +250,153 @@
         let text = '';
         for(let k in grp) text+=`${k}：\n`+grp[k].sort((a,b)=>Utils.getRankWeight(a.成績)-Utils.getRankWeight(b.成績)).map(x=>`${x.班級} ${x.姓名}`).join('、')+'。\n\n';
         
-        // 1. 開啟模態窗 (顯示預覽文字)
         this.openModal('司儀稿預覽', text.replace(/\n/g,'<br>'));
         
-        // 2. 立即顯示「正在建立」狀態
-        this.els.modalFooter.innerHTML = `
-          <div class="w-full flex items-center justify-center text-brand-600 py-2">
-             <i class="fa-solid fa-circle-notch fa-spin mr-2"></i> 正在自動建立 Google 文件，請稍候...
-          </div>`;
-
-        // 3. 自動呼叫 API
-        API.createEmcee(text).then(res => {
-           if(res.status === 'success') {
-               // 4. 成功後，直接顯示 3 顆按鈕 + 關閉
-               this.renderButtons([
-                   { label: '複製文字', click: () => { navigator.clipboard.writeText(text); this.toast('已複製文字','success'); }, icon: 'copy', color: 'green' },
-                   { label: '開啟文件', url: res.data.docUrl, icon: 'file-word', color: 'blue' },
-                   { label: '匯出 PDF', url: res.data.pdfUrl, icon: 'file-pdf', color: 'red' }
-               ]);
-           } else {
-               this.els.modalFooter.innerHTML = `<div class="text-rose-500">建立失敗: ${res.message}</div>`;
-           }
-        }).catch(e => {
-           this.els.modalFooter.innerHTML = `<div class="text-rose-500">系統錯誤，請檢查網路</div>`;
-        });
+        // 直接顯示：[複製文字] [Google Doc] [PDF] [關閉]
+        this.renderButtons([
+            { label: '複製文字', click: () => { navigator.clipboard.writeText(text); this.toast('已複製文字','success'); }, icon: 'copy', color: 'green' },
+            { 
+              label: '建立並開啟 Google 文件', 
+              icon: 'file-word', 
+              color: 'blue', 
+              click: (btn) => this.executeAndOpen('emcee', 'doc', text, btn) 
+            },
+            { 
+              label: '建立並開啟 PDF', 
+              icon: 'file-pdf', 
+              color: 'red', 
+              click: (btn) => this.executeAndOpen('emcee', 'pdf', text, btn) 
+            }
+        ]);
       },
 
-      // 🔥🔥🔥 重大修改：敘獎單全自動模式 🔥🔥🔥
+      // 🔥🔥🔥 敘獎單：預覽時直接顯示所有按鈕 🔥🔥🔥
       handleAwardPreview() {
         const sel = State.getChecked();
         if(!sel.length) return this.toast('請至少勾選一筆','error');
         
         const text = sel.map(r=>`${r.班級}-${r.座號} ${r.姓名} (${r.獎懲種類})`).join('<br>');
-        
         this.openModal('敘獎單預覽', text);
         
-        this.els.modalFooter.innerHTML = `
-          <div class="w-full flex items-center justify-center text-brand-600 py-2">
-             <i class="fa-solid fa-circle-notch fa-spin mr-2"></i> 正在自動複製試算表範本，請稍候...
-          </div>`;
+        // 直接顯示：[試算表] [PDF] [關閉]
+        this.renderButtons([
+            { 
+              label: '建立並開啟試算表', 
+              icon: 'file-excel', 
+              color: 'emerald', 
+              click: (btn) => this.executeAndOpen('award', 'doc', sel, btn) 
+            },
+            { 
+              label: '建立並開啟 PDF', 
+              icon: 'file-pdf', 
+              color: 'red', 
+              click: (btn) => this.executeAndOpen('award', 'pdf', sel, btn) 
+            }
+        ]);
+      },
 
-        API.createAward(sel).then(res => {
-           if(res.status === 'success') {
-               // 成功後，顯示 開啟試算表 + PDF + 關閉
-               this.renderButtons([
-                   { label: '開啟試算表', url: res.data.docUrl, icon: 'file-excel', color: 'emerald' },
-                   { label: '匯出 PDF', url: res.data.pdfUrl, icon: 'file-pdf', color: 'red' }
-               ]);
-           } else {
-               this.els.modalFooter.innerHTML = `<div class="text-rose-500">建立失敗: ${res.message}</div>`;
-           }
-        }).catch(e => {
-           this.els.modalFooter.innerHTML = `<div class="text-rose-500">系統錯誤</div>`;
-        });
+      // 核心：按下按鈕後 -> 呼叫API -> 開啟對應連結
+      executeAndOpen(type, format, data, btnElement) {
+         // 1. 鎖定按鈕避免重複點擊
+         const originalText = btnElement.innerHTML;
+         btnElement.disabled = true;
+         btnElement.innerHTML = `<i class="fa-solid fa-circle-notch fa-spin"></i> 處理中...`;
+
+         // 2. 呼叫 API (後端其實一次產生兩個連結，我們前端決定開哪個)
+         const apiCall = type === 'emcee' ? API.createEmcee(data) : API.createAward(data);
+         
+         apiCall.then(res => {
+             if(res.status === 'success') {
+                 // 3. 成功後開啟網址
+                 const url = format === 'pdf' ? res.data.pdfUrl : res.data.docUrl;
+                 window.open(url, '_blank');
+                 this.toast('檔案已開啟', 'success');
+             } else {
+                 this.toast('建立失敗: ' + res.message, 'error');
+             }
+         }).catch(e => {
+             this.toast('系統錯誤', 'error');
+         }).finally(() => {
+             // 4. 恢復按鈕
+             btnElement.disabled = false;
+             btnElement.innerHTML = originalText;
+         });
       },
 
       openModal(title, htmlContent) {
         this.els.modalTitle.textContent = title;
         this.els.modalContent.innerHTML = htmlContent;
         this.els.modal.classList.remove('hidden');
-        // Footer 內容由個別函式控制
       },
 
-      // 通用按鈕渲染器
       renderButtons(buttons) {
-        this.els.modalFooter.innerHTML = ''; // 清空
+        this.els.modalFooter.innerHTML = ''; 
         
-        // 依序加入按鈕
         buttons.forEach(cfg => {
             const btn = document.createElement('button');
             let colorClass = 'bg-slate-600 hover:bg-slate-700';
-            // 顏色對應
             if(cfg.color === 'red') colorClass = 'bg-rose-600 hover:bg-rose-700';
             else if(cfg.color === 'green') colorClass = 'bg-green-600 hover:bg-green-700';
             else if(cfg.color === 'emerald') colorClass = 'bg-emerald-600 hover:bg-emerald-700';
             else if(cfg.color === 'blue') colorClass = 'bg-blue-600 hover:bg-blue-700';
             
-            btn.className = `inline-flex w-full justify-center rounded-md ${colorClass} px-3 py-2 text-sm font-semibold text-white shadow-sm sm:w-auto gap-2 items-center mr-2 mb-2 sm:mb-0`;
+            btn.className = `inline-flex w-full sm:w-auto justify-center rounded-md ${colorClass} px-3 py-2 text-sm font-semibold text-white shadow-sm gap-2 items-center`;
             btn.innerHTML = `<i class="fa-solid fa-${cfg.icon}"></i> ${cfg.label}`;
             
-            if (cfg.click) btn.onclick = cfg.click;
+            if (cfg.click) btn.onclick = () => cfg.click(btn); // 傳入 btn 本身以便控制 loading 狀態
             else btn.onclick = () => window.open(cfg.url, '_blank');
             
             this.els.modalFooter.appendChild(btn);
         });
 
-        // 永遠加入「關閉」按鈕在最後
+        // 關閉按鈕
         const closeBtn = document.createElement('button');
-        closeBtn.className = "mt-3 inline-flex w-full justify-center rounded-md bg-white px-3 py-2 text-sm font-semibold text-slate-900 shadow-sm ring-1 ring-inset ring-slate-300 hover:bg-slate-50 sm:mt-0 sm:w-auto";
+        closeBtn.className = "inline-flex w-full sm:w-auto justify-center rounded-md bg-white px-3 py-2 text-sm font-semibold text-slate-900 shadow-sm ring-1 ring-inset ring-slate-300 hover:bg-slate-50";
         closeBtn.textContent = "關閉";
         closeBtn.onclick = () => this.els.modal.classList.add('hidden');
         this.els.modalFooter.appendChild(closeBtn);
       },
 
-      closeModal(){this.els.modal.classList.add('hidden')},
       async openHistory(){
-         this.els.historyModal.classList.remove('hidden'); this.els.historyList.innerHTML='載入中...';
-         try{const res=await API.getHistory();this.els.historyList.innerHTML=res.data.records.map(r=>`<div class="p-3 border-b flex justify-between"><div><span class="font-bold">${r.班級}-${r.座號} ${r.姓名}</span> <span class="text-sm text-slate-500">${Utils.formatDate(r.發生日期)}</span><div class="text-sm">${r.事由}</div></div><button onclick='UI.copyHist(${JSON.stringify(r)})' class="text-blue-600 text-sm">複製</button></div>`).join('')}catch(e){this.els.historyList.innerHTML='失敗'}
+         this.els.historyModal.classList.remove('hidden'); 
+         this.els.historyList.innerHTML='<div class="p-8 text-center text-slate-500"><i class="fa-solid fa-spinner fa-spin"></i> 載入中...</div>';
+         this.els.historyPagination.classList.add('hidden');
+         
+         try{
+             const res = await API.getHistory();
+             State.history = res.data.records;
+             State.historyPage = 1;
+             this.renderHistoryList();
+         } catch(e){
+             this.els.historyList.innerHTML='<div class="p-8 text-center text-rose-500">載入失敗</div>';
+         }
       },
+      
+      renderHistoryList() {
+        if(!State.history.length) { 
+            this.els.historyList.innerHTML = '<div class="p-8 text-center text-slate-400">尚無歷史紀錄</div>'; 
+            return; 
+        }
+        const start = (State.historyPage - 1) * State.itemsPerPage;
+        const end = start + State.itemsPerPage;
+        const pageData = State.history.slice(start, end);
+
+        this.els.historyList.innerHTML = pageData.map(r => `
+          <div class="p-4 border-b border-slate-100 hover:bg-slate-50 flex justify-between items-center transition-colors">
+             <div>
+               <span class="font-bold text-slate-800">${r.班級}-${r.座號} ${r.姓名}</span> 
+               <span class="text-sm text-slate-400 ml-2">${Utils.formatDate(r.發生日期)}</span>
+               <div class="text-sm text-slate-600 mt-1">${r.事由} ${r.成績 ? `(${r.成績})` : ''}</div>
+             </div>
+             <button onclick='UI.copyHist(${JSON.stringify(r)})' class="px-3 py-1 text-sm bg-white border border-brand-200 text-brand-600 rounded hover:bg-brand-50 transition-colors">複製</button>
+          </div>`).join('');
+
+        this.els.historyPagination.classList.remove('hidden');
+        this.els.histInfo.textContent = `第 ${State.historyPage} 頁 / 共 ${Math.ceil(State.history.length / State.itemsPerPage)} 頁`;
+        this.els.histPrev.disabled = State.historyPage === 1;
+        this.els.histNext.disabled = end >= State.history.length;
+      },
+
       copyHist(r){State.add({...r,checked:true});this.els.historyModal.classList.add('hidden');this.toast('已複製','success')},
       closeHistory(){this.els.historyModal.classList.add('hidden')},
       toast(m,t){const d=document.createElement('div');d.className=`fixed bottom-5 right-5 px-4 py-3 rounded text-white shadow ${t==='success'?'bg-emerald-600':'bg-rose-500'}`;d.innerHTML=m;document.body.appendChild(d);setTimeout(()=>d.remove(),3000)}
