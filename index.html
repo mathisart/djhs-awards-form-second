@@ -7,6 +7,11 @@
   <script src="https://cdn.tailwindcss.com"></script>
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
   <link rel="icon" href="https://cdn-icons-png.flaticon.com/512/1903/1903172.png">
+  
+  <script>
+    // 👇👇👇 請將您的 GAS 部署網址 (以 /exec 結尾) 貼在這裡 👇👇👇
+    const GAS_URL = "https://script.google.com/macros/s/AKfycbyFQEigHVBMAVJMfkl6WDqrCm5Ur1RmDik6fz2_gJokBpx47KldAbhMHj86NLrMWvEP/exec";
+  </script>
   <script>
     tailwind.config = {
       theme: { extend: { colors: { brand: { 50: '#eff6ff', 100: '#dbeafe', 500: '#3b82f6', 600: '#2563eb', 700: '#1d4ed8' } } } }
@@ -131,15 +136,13 @@
   <div id="historyModal" class="fixed inset-0 z-40 hidden"><div class="fixed inset-0 bg-slate-900/50 backdrop-blur-sm" onclick="UI.closeHistory()"></div><div class="fixed inset-0 z-10 overflow-y-auto pointer-events-none"><div class="flex min-h-full items-center justify-center p-4"><div class="pointer-events-auto relative bg-white rounded-xl shadow-2xl w-full max-w-4xl max-h-[80vh] flex flex-col"><div class="p-4 border-b flex justify-between items-center"><h3 class="text-lg font-bold text-slate-800">歷史紀錄</h3><button onclick="UI.closeHistory()"><i class="fa-solid fa-xmark"></i></button></div><div class="p-0 overflow-y-auto custom-scroll flex-1 bg-slate-50" id="historyList"></div></div></div></div></div>
 
   <script>
-    // ⚠️⚠️⚠️ 請在此填入您的 GAS 部署網址 (以 /exec 結尾) ⚠️⚠️⚠️
-    const GAS_URL = "https://script.google.com/macros/s/AKfycbyFQEigHVBMAVJMfkl6WDqrCm5Ur1RmDik6fz2_gJokBpx47KldAbhMHj86NLrMWvEP/exec"; 
-
+    // 主要邏輯區 (已將設定值移除，這裡會直接讀取上方的 GAS_URL)
     const Utils = { uuid:()=>crypto.randomUUID().split('-')[0], formatDate:(d)=>{if(!d)return'';const date=new Date(d);return isNaN(date)?d:date.toISOString().split('T')[0]}, getRankWeight:(r)=>{if(!r)return 999;const m={'金':10,'銀':20,'銅':30,'特優':40,'優等':50,'甲':60,'佳':70,'第一':1,'第二':2,'第三':3};for(let k in m)if(r.includes(k))return m[k];return 100} };
     const State = { rows:[], history:[], add(r){this.rows.unshift({...r,id:Utils.uuid(),checked:true});UI.renderList()}, remove(id){this.rows=this.rows.filter(r=>r.id!==id);UI.renderList()}, clear(){this.rows=[];UI.renderList()}, toggleCheck(id,s){const r=this.rows.find(x=>x.id===id);if(r)r.checked=s}, getChecked(){return this.rows.filter(r=>r.checked)} };
     
     const API = {
       async post(payload) {
-        // 使用 fetch 呼叫 GAS, 使用 no-cors 模式或是標準 POST
+        // 使用定義在 Head 的 GAS_URL
         const formData = new URLSearchParams();
         for(const k in payload) formData.append(k, typeof payload[k]==='object'?JSON.stringify(payload[k]):payload[k]);
         const res = await fetch(GAS_URL, { method:'POST', body:formData });
@@ -151,7 +154,7 @@
       async addRecordDB(r){this.post({action:'add_record',...r}).catch(e=>UI.toast('寫入失敗','error'))},
       async createEmcee(t){return this.post({action:'create_emcee_doc',text:t})},
       async createAward(r){return this.post({action:'create_award_doc',rows:r})},
-      async getSheetUrl(){return this.post({action:'get_sheet_url'})} // 新增：取得連結
+      async getSheetUrl(){return this.post({action:'get_sheet_url'})}
     };
 
     const UI = {
@@ -173,7 +176,6 @@
         API.ping().then(()=>{
           this.els.statusBadge.innerHTML='<i class="fa-solid fa-wifi"></i> 連線正常';
           this.els.statusBadge.className='inline-flex items-center gap-2 px-4 py-2 bg-emerald-100 text-emerald-700 rounded-full text-sm font-bold';
-          // 取得資料庫連結
           API.getSheetUrl().then(res=>{ if(res.data && res.data.url){ this.els.dbLink.href=res.data.url; this.els.dbLink.classList.remove('hidden'); } });
         }).catch(()=>{
           this.els.statusBadge.innerHTML='<i class="fa-solid fa-triangle-exclamation"></i> 連線失敗';
@@ -203,7 +205,6 @@
       handlePreview(type, apiFunc, successCb) {
         const sel = State.getChecked();
         if(!sel.length) return this.toast('請至少勾選一筆','error');
-        // 簡單產生預覽文字
         let text = '';
         if(type==='司儀稿') {
            const grp={}; sel.forEach(r=>{if(!grp[r.事由])grp[r.事由]=[];grp[r.事由].push(r)});
@@ -211,11 +212,9 @@
         } else {
            text = sel.map(r=>`${r.班級}-${r.座號} ${r.姓名} (${r.獎懲種類})`).join('<br>');
         }
-        
         this.els.modalTitle.textContent = type + '預覽';
         this.els.modalContent.innerHTML = text.replace(/\n/g,'<br>');
         this.els.modal.classList.remove('hidden');
-        
         const btn = this.els.modalActionBtn;
         btn.innerHTML = '匯出'; btn.className = 'inline-flex w-full justify-center rounded-md bg-brand-600 px-3 py-2 text-sm font-semibold text-white shadow-sm hover:bg-brand-500 sm:w-auto';
         btn.onclick = async () => {
