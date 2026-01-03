@@ -204,8 +204,7 @@
       async getStudentName(c,s){return this.post({action:'get_student_name',class:c,seat:s})},
       async getHistory(){return this.post({action:'get_history'})},
       async addRecordDB(r){this.post({action:'add_record',...r}).catch(e=>UI.toast('寫入失敗','error'))},
-      async createEmcee(t){return this.post({action:'create_emcee_doc',text:t})},
-      async createAward(r){return this.post({action:'create_award_doc',rows:r})},
+      async createEmcee(rows){ return this.post({action:'create_emcee_doc', rows: rows}) },      async createAward(r){return this.post({action:'create_award_doc',rows:r})},
       async getSheetUrl(){return this.post({action:'get_sheet_url'})}
     };
 
@@ -267,6 +266,7 @@
         const sel = State.getChecked();
         if(!sel.length) return this.toast('請至少勾選一筆','error');
         
+        // 這裡依然產生文字，僅供「預覽」和「複製」使用
         const grp={}; sel.forEach(r=>{if(!grp[r.事由])grp[r.事由]=[];grp[r.事由].push(r)});
         let text = '';
         for(let k in grp) {
@@ -276,10 +276,22 @@
         }
         
         this.openModal('司儀稿預覽', text.replace(/\n/g,'<br>'));
+        
+        // 👇 修改重點：executeAndOpen 的第三個參數，改傳 `sel` (原始陣列)，而不是 `text`
         this.renderButtons([
             { label: '複製文字', click: () => { navigator.clipboard.writeText(text); this.toast('已複製文字','success'); }, icon: 'copy', color: 'green' },
-            { label: '建立並開啟 Google 文件', icon: 'file-word', color: 'blue', click: (btn) => this.executeAndOpen('emcee', 'doc', text, btn) },
-            { label: '建立並開啟 PDF', icon: 'file-pdf', color: 'red', click: (btn) => this.executeAndOpen('emcee', 'pdf', text, btn) }
+            { 
+              label: '建立並開啟 Google 文件', 
+              icon: 'file-word', 
+              color: 'blue', 
+              click: (btn) => this.executeAndOpen('emcee', 'doc', sel, btn) // 👈 這裡改成 sel
+            },
+            { 
+              label: '建立並開啟 PDF', 
+              icon: 'file-pdf', 
+              color: 'red', 
+              click: (btn) => this.executeAndOpen('emcee', 'pdf', sel, btn) // 👈 這裡改成 sel
+            }
         ]);
       },
 
