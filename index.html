@@ -3,14 +3,14 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>校園榮譽頒獎系統 (PRO版P</title>
+  <title>校園榮譽頒獎系統 (GitHub版)</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
   <link rel="icon" href="https://cdn-icons-png.flaticon.com/512/1903/1903172.png">
   
   <script>
     // 👇👇👇 請將您的 GAS 部署網址 (以 /exec 結尾) 貼在這裡 👇👇👇
-    const GAS_URL = "https://script.google.com/macros/s/AKfycbyFQEigHVBMAVJMfkl6WDqrCm5Ur1RmDik6fz2_gJokBpx47KldAbhMHj86NLrMWvEP/exec";
+    const GAS_URL = "https://script.google.com/macros/s/您的ID/exec";
   </script>
   <script>
     tailwind.config = {
@@ -30,7 +30,7 @@
       <div>
         <h1 class="text-2xl md:text-3xl font-bold text-slate-900 flex items-center gap-2">
           <i class="fa-solid fa-school text-brand-600"></i>
-          校園榮譽頒獎系統 <span class="text-xs bg-brand-100 text-brand-700 px-2 py-1 rounded-full">Web v4.2</span>
+          校園榮譽頒獎系統 <span class="text-xs bg-brand-100 text-brand-700 px-2 py-1 rounded-full">Web v4.3</span>
         </h1>
         <a id="dbLink" href="#" target="_blank" class="hidden text-xs text-brand-600 hover:underline ml-2">
           <i class="fa-solid fa-database"></i> 資料庫
@@ -141,11 +141,8 @@
                     <h3 class="text-xl font-bold text-slate-900" id="modalTitle">預覽</h3>
                     <div class="mt-4 max-h-[60vh] overflow-y-auto custom-scroll p-4 bg-slate-50 rounded-lg text-sm text-slate-600" id="modalContent"></div>
                 </div>
-                <div id="modalFooter" class="bg-slate-50 px-4 py-3 sm:flex sm:flex-row-reverse sm:px-6 gap-2 flex-wrap">
-                    <button id="modalActionBtn" class="inline-flex w-full justify-center rounded-md bg-brand-600 px-3 py-2 text-sm font-semibold text-white shadow-sm hover:bg-brand-500 sm:w-auto">建立檔案</button>
-                    <button id="modalCopyBtn" class="hidden inline-flex w-full justify-center rounded-md bg-white px-3 py-2 text-sm font-semibold text-slate-700 shadow-sm ring-1 ring-inset ring-slate-300 hover:bg-slate-50 sm:w-auto"><i class="fa-regular fa-copy mr-2"></i>複製文字</button>
-                    <button id="modalCloseBtn" class="mt-3 inline-flex w-full justify-center rounded-md bg-white px-3 py-2 text-sm font-semibold text-slate-900 shadow-sm ring-1 ring-inset ring-slate-300 hover:bg-slate-50 sm:mt-0 sm:w-auto">關閉</button>
-                </div>
+                <div id="modalFooter" class="bg-slate-50 px-4 py-3 sm:flex sm:flex-row sm:px-6 gap-2 flex-wrap items-center">
+                    </div>
             </div>
         </div>
     </div>
@@ -176,14 +173,13 @@
     const UI = {
       els: {},
       init() {
-        ['inClass','inSeat','inName','inDate','inReason','inRank','inReward','btnAdd','tableBody','mobileList','q','btnEmcee','btnAward','btnClear','statusBadge','modal','modalTitle','modalContent','modalCloseBtn','modalActionBtn','modalCopyBtn','modalFooter','historyModal','historyList','nameLoading','checkAll','dbLink'].forEach(id=>this.els[id]=document.getElementById(id));
+        ['inClass','inSeat','inName','inDate','inReason','inRank','inReward','btnAdd','tableBody','mobileList','q','btnEmcee','btnAward','btnClear','statusBadge','modal','modalTitle','modalContent','modalFooter','historyModal','historyList','nameLoading','checkAll','dbLink'].forEach(id=>this.els[id]=document.getElementById(id));
         this.els.btnAdd.onclick=()=>this.handleAdd();
         this.els.btnClear.onclick=()=>{if(confirm('清空？'))State.clear()};
         this.els.inClass.onblur=this.els.inSeat.onblur=()=>this.handleAutoName();
         this.els.q.oninput=()=>this.renderList();
         this.els.btnEmcee.onclick=()=>this.handleEmceePreview();
         this.els.btnAward.onclick=()=>this.handleAwardPreview();
-        this.els.modalCloseBtn.onclick=()=>this.closeModal();
         this.els.checkAll.onchange=(e)=>{State.rows.forEach(r=>r.checked=e.target.checked);this.renderList()};
         this.els.inDate.valueAsDate=new Date();
         this.checkConnection(); this.renderList();
@@ -219,7 +215,7 @@
         document.getElementById('emptyState').classList.toggle('hidden',f.length!==0);
       },
 
-      // 🔥 優化版：司儀稿 (成功後顯示 3 個按鈕，包含綠色複製)
+      // 🔥🔥🔥 重大修改：司儀稿全自動模式 🔥🔥🔥
       handleEmceePreview() {
         const sel = State.getChecked();
         if(!sel.length) return this.toast('請至少勾選一筆','error');
@@ -228,102 +224,97 @@
         let text = '';
         for(let k in grp) text+=`${k}：\n`+grp[k].sort((a,b)=>Utils.getRankWeight(a.成績)-Utils.getRankWeight(b.成績)).map(x=>`${x.班級} ${x.姓名}`).join('、')+'。\n\n';
         
-        // 預覽階段：顯示複製按鈕 (方便不想建立檔案的人)
-        this.els.modalCopyBtn.classList.remove('hidden');
-        this.els.modalCopyBtn.onclick = () => { navigator.clipboard.writeText(text); this.toast('已複製文字','success'); };
+        // 1. 開啟模態窗 (顯示預覽文字)
+        this.openModal('司儀稿預覽', text.replace(/\n/g,'<br>'));
         
-        this.openModal('司儀稿預覽', text.replace(/\n/g,'<br>'), async () => {
-           const res = await API.createEmcee(text);
+        // 2. 立即顯示「正在建立」狀態
+        this.els.modalFooter.innerHTML = `
+          <div class="w-full flex items-center justify-center text-brand-600 py-2">
+             <i class="fa-solid fa-circle-notch fa-spin mr-2"></i> 正在自動建立 Google 文件，請稍候...
+          </div>`;
+
+        // 3. 自動呼叫 API
+        API.createEmcee(text).then(res => {
            if(res.status === 'success') {
-               // ✅ 成功後：按鈕列 (3個)
-               this.updateModalButtonsAfterSuccess([
-                   { label: '複製文字', click: () => { navigator.clipboard.writeText(text); this.toast('已複製','success'); }, icon: 'copy', color: 'emerald' },
+               // 4. 成功後，直接顯示 3 顆按鈕 + 關閉
+               this.renderButtons([
+                   { label: '複製文字', click: () => { navigator.clipboard.writeText(text); this.toast('已複製文字','success'); }, icon: 'copy', color: 'green' },
                    { label: '開啟文件', url: res.data.docUrl, icon: 'file-word', color: 'blue' },
                    { label: '匯出 PDF', url: res.data.pdfUrl, icon: 'file-pdf', color: 'red' }
                ]);
            } else {
-               this.toast('失敗: '+res.message, 'error');
+               this.els.modalFooter.innerHTML = `<div class="text-rose-500">建立失敗: ${res.message}</div>`;
            }
+        }).catch(e => {
+           this.els.modalFooter.innerHTML = `<div class="text-rose-500">系統錯誤，請檢查網路</div>`;
         });
       },
 
-      // 🔥 優化版：敘獎單 (成功後顯示 2 個按鈕，移除建立檔案)
+      // 🔥🔥🔥 重大修改：敘獎單全自動模式 🔥🔥🔥
       handleAwardPreview() {
         const sel = State.getChecked();
         if(!sel.length) return this.toast('請至少勾選一筆','error');
         
         const text = sel.map(r=>`${r.班級}-${r.座號} ${r.姓名} (${r.獎懲種類})`).join('<br>');
-        this.els.modalCopyBtn.classList.add('hidden'); // 敘獎單不需要預覽複製
+        
+        this.openModal('敘獎單預覽', text);
+        
+        this.els.modalFooter.innerHTML = `
+          <div class="w-full flex items-center justify-center text-brand-600 py-2">
+             <i class="fa-solid fa-circle-notch fa-spin mr-2"></i> 正在自動複製試算表範本，請稍候...
+          </div>`;
 
-        this.openModal('敘獎單預覽', text, async () => {
-           const res = await API.createAward(sel);
+        API.createAward(sel).then(res => {
            if(res.status === 'success') {
-               // ✅ 成功後：按鈕列 (2個) - 「建立檔案」會自動消失
-               this.updateModalButtonsAfterSuccess([
+               // 成功後，顯示 開啟試算表 + PDF + 關閉
+               this.renderButtons([
                    { label: '開啟試算表', url: res.data.docUrl, icon: 'file-excel', color: 'emerald' },
                    { label: '匯出 PDF', url: res.data.pdfUrl, icon: 'file-pdf', color: 'red' }
                ]);
            } else {
-               this.toast('失敗: '+res.message, 'error');
+               this.els.modalFooter.innerHTML = `<div class="text-rose-500">建立失敗: ${res.message}</div>`;
            }
+        }).catch(e => {
+           this.els.modalFooter.innerHTML = `<div class="text-rose-500">系統錯誤</div>`;
         });
       },
 
-      // 開啟模態窗 (重置狀態)
-      openModal(title, htmlContent, actionCallback) {
+      openModal(title, htmlContent) {
         this.els.modalTitle.textContent = title;
         this.els.modalContent.innerHTML = htmlContent;
         this.els.modal.classList.remove('hidden');
-        
-        // 清除舊的動態按鈕
-        const oldBtns = this.els.modalFooter.querySelectorAll('.dynamic-btn');
-        oldBtns.forEach(b => b.remove());
-
-        // 重置「建立檔案」按鈕
-        const btn = this.els.modalActionBtn;
-        btn.innerHTML = '建立檔案';
-        btn.className = 'inline-flex w-full justify-center rounded-md bg-brand-600 px-3 py-2 text-sm font-semibold text-white shadow-sm hover:bg-brand-500 sm:w-auto';
-        btn.classList.remove('hidden');
-        btn.disabled = false;
-        
-        btn.onclick = async () => {
-           btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin mr-2"></i>處理中...'; 
-           btn.disabled = true;
-           try { await actionCallback(); } catch(e) { console.error(e); this.toast('系統錯誤','error'); btn.innerHTML = '重試'; btn.disabled = false; }
-        };
+        // Footer 內容由個別函式控制
       },
 
-      // ✅ 動態產生按鈕列 (排成一列)
-      updateModalButtonsAfterSuccess(buttonsConfig) {
-        // 隱藏原本的「建立」與「複製」按鈕
-        this.els.modalActionBtn.classList.add('hidden');
-        this.els.modalCopyBtn.classList.add('hidden');
-
-        // 清除舊的動態按鈕 (雙重保險)
-        const oldBtns = this.els.modalFooter.querySelectorAll('.dynamic-btn');
-        oldBtns.forEach(b => b.remove());
-
-        // 依序插入新按鈕
-        buttonsConfig.forEach(cfg => {
-            const newBtn = document.createElement('button');
-            // 顏色設定
+      // 通用按鈕渲染器
+      renderButtons(buttons) {
+        this.els.modalFooter.innerHTML = ''; // 清空
+        
+        // 依序加入按鈕
+        buttons.forEach(cfg => {
+            const btn = document.createElement('button');
             let colorClass = 'bg-slate-600 hover:bg-slate-700';
+            // 顏色對應
             if(cfg.color === 'red') colorClass = 'bg-rose-600 hover:bg-rose-700';
+            else if(cfg.color === 'green') colorClass = 'bg-green-600 hover:bg-green-700';
             else if(cfg.color === 'emerald') colorClass = 'bg-emerald-600 hover:bg-emerald-700';
             else if(cfg.color === 'blue') colorClass = 'bg-blue-600 hover:bg-blue-700';
             
-            newBtn.className = `dynamic-btn inline-flex w-full justify-center rounded-md ${colorClass} px-3 py-2 text-sm font-semibold text-white shadow-sm sm:w-auto gap-2 items-center mr-2 mb-2 sm:mb-0`;
-            newBtn.innerHTML = `<i class="fa-solid fa-${cfg.icon}"></i> ${cfg.label}`;
+            btn.className = `inline-flex w-full justify-center rounded-md ${colorClass} px-3 py-2 text-sm font-semibold text-white shadow-sm sm:w-auto gap-2 items-center mr-2 mb-2 sm:mb-0`;
+            btn.innerHTML = `<i class="fa-solid fa-${cfg.icon}"></i> ${cfg.label}`;
             
-            // 支援網址開啟或點擊事件
-            if (cfg.click) newBtn.onclick = cfg.click;
-            else newBtn.onclick = () => window.open(cfg.url, '_blank');
+            if (cfg.click) btn.onclick = cfg.click;
+            else btn.onclick = () => window.open(cfg.url, '_blank');
             
-            // 插在 Close 按鈕前面 (確保順序)
-            this.els.modalFooter.insertBefore(newBtn, this.els.modalCloseBtn);
+            this.els.modalFooter.appendChild(btn);
         });
 
-        this.toast('檔案建立成功！', 'success');
+        // 永遠加入「關閉」按鈕在最後
+        const closeBtn = document.createElement('button');
+        closeBtn.className = "mt-3 inline-flex w-full justify-center rounded-md bg-white px-3 py-2 text-sm font-semibold text-slate-900 shadow-sm ring-1 ring-inset ring-slate-300 hover:bg-slate-50 sm:mt-0 sm:w-auto";
+        closeBtn.textContent = "關閉";
+        closeBtn.onclick = () => this.els.modal.classList.add('hidden');
+        this.els.modalFooter.appendChild(closeBtn);
       },
 
       closeModal(){this.els.modal.classList.add('hidden')},
