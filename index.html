@@ -30,7 +30,7 @@
       <div>
         <h1 class="text-2xl md:text-3xl font-bold text-slate-900 flex items-center gap-2">
           <i class="fa-solid fa-school text-brand-600"></i>
-          校園榮譽頒獎系統 <span class="text-xs bg-brand-100 text-brand-700 px-2 py-1 rounded-full">Web v4.6</span>
+          校園榮譽頒獎系統 <span class="text-xs bg-brand-100 text-brand-700 px-2 py-1 rounded-full">Web v4.7</span>
         </h1>
         <a id="dbLink" href="#" target="_blank" class="hidden text-xs text-brand-600 hover:underline ml-2">
           <i class="fa-solid fa-database"></i> 資料庫
@@ -141,8 +141,7 @@
                     <h3 class="text-xl font-bold text-slate-900" id="modalTitle">預覽</h3>
                     <div class="mt-4 max-h-[60vh] overflow-y-auto custom-scroll p-4 bg-slate-50 rounded-lg text-sm text-slate-600" id="modalContent"></div>
                 </div>
-                <div id="modalFooter" class="bg-slate-50 px-4 py-3 sm:flex sm:flex-row sm:justify-end sm:px-6 gap-2 flex-wrap items-center">
-                    </div>
+                <div id="modalFooter" class="bg-slate-50 px-4 py-3 sm:flex sm:flex-row sm:justify-end sm:px-6 gap-2 flex-wrap items-center"></div>
             </div>
         </div>
     </div>
@@ -153,15 +152,31 @@
       <div class="fixed inset-0 z-10 overflow-y-auto pointer-events-none">
           <div class="flex min-h-full items-center justify-center p-4">
               <div class="pointer-events-auto relative bg-white rounded-xl shadow-2xl w-full max-w-4xl max-h-[80vh] flex flex-col">
-                  <div class="p-4 border-b flex justify-between items-center">
-                      <h3 class="text-lg font-bold text-slate-800">歷史紀錄</h3>
-                      <button onclick="UI.closeHistory()"><i class="fa-solid fa-xmark text-xl text-slate-400 hover:text-slate-600"></i></button>
+                  <div class="p-4 border-b bg-white rounded-t-xl sticky top-0 z-20">
+                      <div class="flex justify-between items-center mb-3">
+                          <h3 class="text-lg font-bold text-slate-800 flex items-center gap-2">
+                              <i class="fa-solid fa-clock-rotate-left text-brand-600"></i> 歷史紀錄
+                          </h3>
+                          <button onclick="UI.closeHistory()"><i class="fa-solid fa-xmark text-xl text-slate-400 hover:text-slate-600"></i></button>
+                      </div>
+                      <div class="relative">
+                          <i class="fa-solid fa-search absolute left-3 top-2.5 text-slate-400"></i>
+                          <input id="histSearch" type="text" placeholder="搜尋歷史紀錄 (姓名、班級、事由)..." class="w-full pl-9 pr-4 py-2 border border-slate-200 rounded-lg bg-slate-50 focus:bg-white focus:border-brand-500 outline-none text-sm transition-all">
+                      </div>
                   </div>
+
                   <div class="p-0 overflow-y-auto custom-scroll flex-1 bg-slate-50" id="historyList"></div>
-                  <div id="historyPagination" class="p-3 border-t bg-white flex justify-between items-center text-sm text-slate-600 hidden">
-                      <button id="histPrev" class="px-3 py-1 bg-slate-100 rounded hover:bg-slate-200 disabled:opacity-50"><i class="fa-solid fa-chevron-left"></i> 上一頁</button>
-                      <span id="histInfo">第 1 頁</span>
-                      <button id="histNext" class="px-3 py-1 bg-slate-100 rounded hover:bg-slate-200 disabled:opacity-50">下一頁 <i class="fa-solid fa-chevron-right"></i></button>
+                  
+                  <div id="historyPagination" class="p-3 border-t bg-white flex flex-col sm:flex-row justify-between items-center text-sm text-slate-600 gap-3 hidden">
+                      <div class="flex gap-2">
+                          <button id="histPrev" class="px-3 py-1.5 bg-slate-100 rounded hover:bg-slate-200 disabled:opacity-50"><i class="fa-solid fa-chevron-left"></i></button>
+                          <span id="histInfo" class="px-2 py-1.5 bg-slate-50 rounded">頁碼</span>
+                          <button id="histNext" class="px-3 py-1.5 bg-slate-100 rounded hover:bg-slate-200 disabled:opacity-50"><i class="fa-solid fa-chevron-right"></i></button>
+                      </div>
+                      
+                      <button id="histBatchBtn" class="w-full sm:w-auto px-4 py-2 bg-brand-600 hover:bg-brand-700 text-white rounded-lg font-medium shadow-sm flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed">
+                          <i class="fa-solid fa-reply-all"></i> 複製選取項目 (<span id="histBatchCount">0</span>)
+                      </button>
                   </div>
               </div>
           </div>
@@ -171,7 +186,7 @@
   <script>
     const Utils = { uuid:()=>crypto.randomUUID().split('-')[0], formatDate:(d)=>{if(!d)return'';const date=new Date(d);return isNaN(date)?d:date.toISOString().split('T')[0]}, getRankWeight:(r)=>{if(!r)return 999;const m={'金':10,'銀':20,'銅':30,'特優':40,'優等':50,'甲':60,'佳':70,'第一':1,'第二':2,'第三':3};for(let k in m)if(r.includes(k))return m[k];return 100} };
     const State = { 
-        rows:[], history:[], historyPage: 1, itemsPerPage: 10,
+        rows:[], history:[], historyPage: 1, itemsPerPage: 10, histSearchQuery: '',
         add(r){this.rows.unshift({...r,id:Utils.uuid(),checked:true});UI.renderList()}, 
         remove(id){this.rows=this.rows.filter(r=>r.id!==id);UI.renderList()}, 
         clear(){this.rows=[];UI.renderList()}, 
@@ -198,7 +213,7 @@
     const UI = {
       els: {},
       init() {
-        ['inClass','inSeat','inName','inDate','inReason','inRank','inReward','btnAdd','tableBody','mobileList','q','btnEmcee','btnAward','btnClear','statusBadge','modal','modalTitle','modalContent','modalFooter','historyModal','historyList','historyPagination','histPrev','histNext','histInfo','nameLoading','checkAll','dbLink'].forEach(id=>this.els[id]=document.getElementById(id));
+        ['inClass','inSeat','inName','inDate','inReason','inRank','inReward','btnAdd','tableBody','mobileList','q','btnEmcee','btnAward','btnClear','statusBadge','modal','modalTitle','modalContent','modalFooter','historyModal','historyList','historyPagination','histPrev','histNext','histInfo','histSearch','histBatchBtn','histBatchCount','nameLoading','checkAll','dbLink'].forEach(id=>this.els[id]=document.getElementById(id));
         this.els.btnAdd.onclick=()=>this.handleAdd();
         this.els.btnClear.onclick=()=>{if(confirm('清空？'))State.clear()};
         this.els.inClass.onblur=this.els.inSeat.onblur=()=>this.handleAutoName();
@@ -206,8 +221,16 @@
         this.els.btnEmcee.onclick=()=>this.handleEmceePreview();
         this.els.btnAward.onclick=()=>this.handleAwardPreview();
         this.els.checkAll.onchange=(e)=>{State.rows.forEach(r=>r.checked=e.target.checked);this.renderList()};
+        
+        // 歷史紀錄相關事件
         this.els.histPrev.onclick=()=>{if(State.historyPage>1){State.historyPage--;this.renderHistoryList()}};
-        this.els.histNext.onclick=()=>{if(State.historyPage*State.itemsPerPage<State.history.length){State.historyPage++;this.renderHistoryList()}};
+        this.els.histNext.onclick=()=>{
+            const filtered = this.getFilteredHistory();
+            if(State.historyPage*State.itemsPerPage < filtered.length){State.historyPage++;this.renderHistoryList()}
+        };
+        this.els.histSearch.oninput=(e)=>{ State.histSearchQuery=e.target.value.toLowerCase(); State.historyPage=1; this.renderHistoryList(); };
+        this.els.histBatchBtn.onclick=()=>this.batchCopyHistory();
+
         this.els.inDate.valueAsDate=new Date();
         this.checkConnection(); this.renderList();
       },
@@ -242,7 +265,6 @@
         document.getElementById('emptyState').classList.toggle('hidden',f.length!==0);
       },
 
-      // 🔥🔥🔥 司儀稿重點修改：加入「榮獲」與「結尾詞」 🔥🔥🔥
       handleEmceePreview() {
         const sel = State.getChecked();
         if(!sel.length) return this.toast('請至少勾選一筆','error');
@@ -250,85 +272,42 @@
         const grp={}; sel.forEach(r=>{if(!grp[r.事由])grp[r.事由]=[];grp[r.事由].push(r)});
         let text = '';
         for(let k in grp) {
-            // 排序
             const list = grp[k].sort((a,b)=>Utils.getRankWeight(a.成績)-Utils.getRankWeight(b.成績));
-            // 格式化：班級 姓名 榮獲 成績
-            const names = list.map(x => {
-                const awardText = x.成績 ? ` 榮獲 ${x.成績}` : '';
-                return `${x.班級} ${x.姓名}${awardText}`;
-            }).join('、');
-            
-            // 組合：事由 + 名單 + 恭請校長頒獎
+            const names = list.map(x => { const awardText = x.成績 ? ` 榮獲 ${x.成績}` : ''; return `${x.班級} ${x.姓名}${awardText}`; }).join('、');
             text += `${k}：\n${names}。\n恭請校長頒獎。\n\n`;
         }
         
         this.openModal('司儀稿預覽', text.replace(/\n/g,'<br>'));
-        
-        // 直覺操作按鈕
         this.renderButtons([
             { label: '複製文字', click: () => { navigator.clipboard.writeText(text); this.toast('已複製文字','success'); }, icon: 'copy', color: 'green' },
-            { 
-              label: '建立並開啟 Google 文件', 
-              icon: 'file-word', 
-              color: 'blue', 
-              click: (btn) => this.executeAndOpen('emcee', 'doc', text, btn) 
-            },
-            { 
-              label: '建立並開啟 PDF', 
-              icon: 'file-pdf', 
-              color: 'red', 
-              click: (btn) => this.executeAndOpen('emcee', 'pdf', text, btn) 
-            }
+            { label: '建立並開啟 Google 文件', icon: 'file-word', color: 'blue', click: (btn) => this.executeAndOpen('emcee', 'doc', text, btn) },
+            { label: '建立並開啟 PDF', icon: 'file-pdf', color: 'red', click: (btn) => this.executeAndOpen('emcee', 'pdf', text, btn) }
         ]);
       },
 
-      // 🔥🔥🔥 敘獎單邏輯 🔥🔥🔥
       handleAwardPreview() {
         const sel = State.getChecked();
         if(!sel.length) return this.toast('請至少勾選一筆','error');
-        
         const text = sel.map(r=>`${r.班級}-${r.座號} ${r.姓名} (${r.獎懲種類})`).join('<br>');
         this.openModal('敘獎單預覽', text);
-        
-        // 直覺操作按鈕
         this.renderButtons([
-            { 
-              label: '建立並開啟試算表', 
-              icon: 'file-excel', 
-              color: 'emerald', 
-              click: (btn) => this.executeAndOpen('award', 'doc', sel, btn) 
-            },
-            { 
-              label: '建立並開啟 PDF', 
-              icon: 'file-pdf', 
-              color: 'red', 
-              click: (btn) => this.executeAndOpen('award', 'pdf', sel, btn) 
-            }
+            { label: '建立並開啟試算表', icon: 'file-excel', color: 'emerald', click: (btn) => this.executeAndOpen('award', 'doc', sel, btn) },
+            { label: '建立並開啟 PDF', icon: 'file-pdf', color: 'red', click: (btn) => this.executeAndOpen('award', 'pdf', sel, btn) }
         ]);
       },
 
-      // 核心執行邏輯
       executeAndOpen(type, format, data, btnElement) {
          const originalText = btnElement.innerHTML;
          btnElement.disabled = true;
          btnElement.innerHTML = `<i class="fa-solid fa-circle-notch fa-spin"></i> 處理中...`;
-
          const apiCall = type === 'emcee' ? API.createEmcee(data) : API.createAward(data);
-         
          apiCall.then(res => {
              if(res.status === 'success') {
                  const url = format === 'pdf' ? res.data.pdfUrl : res.data.docUrl;
                  window.open(url, '_blank');
                  this.toast('檔案已開啟', 'success');
-             } else {
-                 this.toast('建立失敗: ' + res.message, 'error');
-             }
-         }).catch(e => {
-             this.toast('系統錯誤', 'error');
-         }).finally(() => {
-             btnElement.disabled = false;
-             btnElement.innerHTML = originalText;
-         });
+             } else { this.toast('建立失敗: ' + res.message, 'error'); }
+         }).catch(e => { this.toast('系統錯誤', 'error'); }).finally(() => { btnElement.disabled = false; btnElement.innerHTML = originalText; });
       },
 
       openModal(title, htmlContent) {
@@ -339,7 +318,6 @@
 
       renderButtons(buttons) {
         this.els.modalFooter.innerHTML = ''; 
-        
         buttons.forEach(cfg => {
             const btn = document.createElement('button');
             let colorClass = 'bg-slate-600 hover:bg-slate-700';
@@ -347,16 +325,11 @@
             else if(cfg.color === 'green') colorClass = 'bg-green-600 hover:bg-green-700';
             else if(cfg.color === 'emerald') colorClass = 'bg-emerald-600 hover:bg-emerald-700';
             else if(cfg.color === 'blue') colorClass = 'bg-blue-600 hover:bg-blue-700';
-            
             btn.className = `inline-flex w-full sm:w-auto justify-center rounded-md ${colorClass} px-3 py-2 text-sm font-semibold text-white shadow-sm gap-2 items-center`;
             btn.innerHTML = `<i class="fa-solid fa-${cfg.icon}"></i> ${cfg.label}`;
-            
-            if (cfg.click) btn.onclick = () => cfg.click(btn);
-            else btn.onclick = () => window.open(cfg.url, '_blank');
-            
+            if (cfg.click) btn.onclick = () => cfg.click(btn); else btn.onclick = () => window.open(cfg.url, '_blank');
             this.els.modalFooter.appendChild(btn);
         });
-
         const closeBtn = document.createElement('button');
         closeBtn.className = "inline-flex w-full sm:w-auto justify-center rounded-md bg-white px-3 py-2 text-sm font-semibold text-slate-900 shadow-sm ring-1 ring-inset ring-slate-300 hover:bg-slate-50";
         closeBtn.textContent = "關閉";
@@ -364,6 +337,7 @@
         this.els.modalFooter.appendChild(closeBtn);
       },
 
+      // 🔥🔥🔥 歷史紀錄 升級區 🔥🔥🔥
       async openHistory(){
          this.els.historyModal.classList.remove('hidden'); 
          this.els.historyList.innerHTML='<div class="p-8 text-center text-slate-500"><i class="fa-solid fa-spinner fa-spin"></i> 載入中...</div>';
@@ -371,7 +345,8 @@
          
          try{
              const res = await API.getHistory();
-             State.history = res.data.records;
+             // 將每筆資料預設加上 checked: false 屬性，用於批次選取
+             State.history = res.data.records.map(r => ({...r, checked: false})); 
              State.historyPage = 1;
              this.renderHistoryList();
          } catch(e){
@@ -379,35 +354,97 @@
          }
       },
       
-      renderHistoryList() {
-        if(!State.history.length) { 
-            this.els.historyList.innerHTML = '<div class="p-8 text-center text-slate-400">尚無歷史紀錄</div>'; 
-            return; 
-        }
-        const start = (State.historyPage - 1) * State.itemsPerPage;
-        const end = start + State.itemsPerPage;
-        const pageData = State.history.slice(start, end);
-
-        this.els.historyList.innerHTML = pageData.map(r => `
-          <div class="p-4 border-b border-slate-100 hover:bg-slate-50 flex justify-between items-center transition-colors">
-             <div>
-               <span class="font-bold text-slate-800">${r.班級}-${r.座號} ${r.姓名}</span> 
-               <span class="text-sm text-slate-400 ml-2">${Utils.formatDate(r.發生日期)}</span>
-               <div class="text-sm text-slate-600 mt-1">${r.事由} ${r.成績 ? `(${r.成績})` : ''}</div>
-             </div>
-             <button onclick='UI.copyHist(${JSON.stringify(r)})' class="px-3 py-1 text-sm bg-white border border-brand-200 text-brand-600 rounded hover:bg-brand-50 transition-colors">複製</button>
-          </div>`).join('');
-
-        this.els.historyPagination.classList.remove('hidden');
-        this.els.histInfo.textContent = `第 ${State.historyPage} 頁 / 共 ${Math.ceil(State.history.length / State.itemsPerPage)} 頁`;
-        this.els.histPrev.disabled = State.historyPage === 1;
-        this.els.histNext.disabled = end >= State.history.length;
+      // 過濾歷史紀錄
+      getFilteredHistory() {
+          if(!State.histSearchQuery) return State.history;
+          return State.history.filter(r => 
+              (r.姓名+r.班級+r.事由).toLowerCase().includes(State.histSearchQuery)
+          );
       },
 
-      copyHist(r){State.add({...r,checked:true});this.els.historyModal.classList.add('hidden');this.toast('已複製','success')},
+      // 渲染歷史列表 (含搜尋、分頁、Checkbox、顏色標籤)
+      renderHistoryList() {
+        const filtered = this.getFilteredHistory();
+        
+        if(!filtered.length) { 
+            this.els.historyList.innerHTML = '<div class="p-8 text-center text-slate-400">查無資料</div>'; 
+            this.els.historyPagination.classList.add('hidden');
+            return; 
+        }
+
+        const start = (State.historyPage - 1) * State.itemsPerPage;
+        const end = start + State.itemsPerPage;
+        const pageData = filtered.slice(start, end);
+
+        this.els.historyList.innerHTML = pageData.map((r, index) => {
+            // 計算全域索引，以便更新 State.history 中正確的 checked 狀態
+            // 注意：這裡簡化處理，直接用資料比對或 ID (若有) 會更穩，這裡用簡易方式
+            const isChecked = r.checked ? 'checked' : '';
+            const rewardColor = r.獎懲種類.includes('嘉獎') ? 'text-emerald-600 bg-emerald-50' : (r.獎懲種類.includes('小功') ? 'text-orange-600 bg-orange-50' : 'text-slate-600 bg-slate-100');
+
+            return `
+            <div class="p-3 border-b border-slate-100 hover:bg-slate-50 flex items-center gap-3 transition-colors group">
+                <input type="checkbox" ${isChecked} onchange="UI.toggleHistCheck('${r.姓名}','${r.事由}', this.checked)" class="w-5 h-5 rounded text-brand-600 cursor-pointer">
+                <div class="flex-1">
+                    <div class="flex items-center gap-2">
+                        <span class="font-bold text-slate-800">${r.班級} ${r.姓名}</span>
+                        <span class="text-xs px-2 py-0.5 rounded ${rewardColor}">${r.獎懲種類}</span>
+                    </div>
+                    <div class="text-sm text-slate-600 mt-0.5">${r.事由} ${r.成績 ? `(${r.成績})` : ''}</div>
+                    <div class="text-xs text-slate-400 mt-0.5"><i class="fa-regular fa-clock"></i> ${Utils.formatDate(r.發生日期)}</div>
+                </div>
+                <button onclick='UI.copyHist(${JSON.stringify(r)})' class="px-3 py-1.5 text-xs bg-white border border-slate-200 text-slate-600 rounded hover:bg-brand-50 hover:text-brand-600 transition-colors">單筆複製</button>
+            </div>`;
+        }).join('');
+
+        // 更新分頁與批次按鈕狀態
+        this.els.historyPagination.classList.remove('hidden');
+        const totalPages = Math.ceil(filtered.length / State.itemsPerPage);
+        this.els.histInfo.textContent = `第 ${State.historyPage} / ${totalPages} 頁`;
+        this.els.histPrev.disabled = State.historyPage === 1;
+        this.els.histNext.disabled = end >= filtered.length;
+        
+        this.updateBatchBtn();
+      },
+
+      toggleHistCheck(name, reason, checked) {
+          // 簡單的比對方式 (實務上最好有 ID)
+          State.history.forEach(r => {
+              if(r.姓名 === name && r.事由 === reason) r.checked = checked;
+          });
+          this.updateBatchBtn();
+      },
+
+      updateBatchBtn() {
+          const count = State.history.filter(r => r.checked).length;
+          this.els.histBatchCount.textContent = count;
+          this.els.histBatchBtn.disabled = count === 0;
+          this.els.histBatchBtn.className = count > 0 
+            ? "w-full sm:w-auto px-4 py-2 bg-brand-600 hover:bg-brand-700 text-white rounded-lg font-medium shadow-sm flex items-center justify-center gap-2"
+            : "w-full sm:w-auto px-4 py-2 bg-slate-300 text-white rounded-lg font-medium shadow-sm flex items-center justify-center gap-2 cursor-not-allowed";
+      },
+
+      batchCopyHistory() {
+          const selected = State.history.filter(r => r.checked);
+          if(selected.length === 0) return;
+          
+          selected.forEach(r => {
+              // 移除 checked 屬性再加入列表
+              const { checked, ...data } = r; 
+              State.add({...data, checked: true}); // 加入主列表時預設勾選
+          });
+          
+          this.els.historyModal.classList.add('hidden');
+          this.toast(`已成功複製 ${selected.length} 筆資料`, 'success');
+      },
+
+      copyHist(r){ State.add({...r, checked: true}); this.els.historyModal.classList.add('hidden'); this.toast('已複製','success'); },
       closeHistory(){this.els.historyModal.classList.add('hidden')},
       toast(m,t){const d=document.createElement('div');d.className=`fixed bottom-5 right-5 px-4 py-3 rounded text-white shadow ${t==='success'?'bg-emerald-600':'bg-rose-500'}`;d.innerHTML=m;document.body.appendChild(d);setTimeout(()=>d.remove(),3000)}
     };
+    
+    // 將 toggleHistCheck 綁定到 UI 物件上以便 HTML onclick 呼叫
+    window.UI = UI; 
     document.addEventListener('DOMContentLoaded',()=>UI.init());
   </script>
 </body>
