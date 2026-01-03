@@ -10,7 +10,7 @@
   
   <script>
     // 👇👇👇 請將您的 GAS 部署網址 (以 /exec 結尾) 貼在這裡 👇👇👇
-    const GAS_URL = "https://script.google.com/macros/s/AKfycbyFQEigHVBMAVJMfkl6WDqrCm5Ur1RmDik6fz2_gJokBpx47KldAbhMHj86NLrMWvEP/exec";
+    const GAS_URL = "https://script.google.com/macros/s/您的ID/exec";
   </script>
   <script>
     tailwind.config = {
@@ -132,17 +132,33 @@
 
   <div id="toastContainer" class="fixed bottom-5 right-5 z-50 flex flex-col gap-2 pointer-events-none"></div>
 
-  <div id="modal" class="fixed inset-0 z-40 hidden"><div class="fixed inset-0 bg-slate-900/50 backdrop-blur-sm" id="modalBackdrop"></div><div class="fixed inset-0 z-10 overflow-y-auto"><div class="flex min-h-full items-end justify-center p-4 sm:items-center sm:p-0"><div class="relative bg-white rounded-lg shadow-xl sm:w-full sm:max-w-2xl" id="modalPanel"><div class="bg-white px-4 pb-4 pt-5 sm:p-6"><h3 class="text-xl font-bold text-slate-900" id="modalTitle">預覽</h3><div class="mt-4 max-h-[60vh] overflow-y-auto custom-scroll p-4 bg-slate-50 rounded-lg text-sm text-slate-600" id="modalContent"></div></div><div class="bg-slate-50 px-4 py-3 sm:flex sm:flex-row-reverse sm:px-6 gap-2"><button id="modalActionBtn" class="inline-flex w-full justify-center rounded-md bg-brand-600 px-3 py-2 text-sm font-semibold text-white shadow-sm hover:bg-brand-500 sm:w-auto">匯出</button><button id="modalCloseBtn" class="mt-3 inline-flex w-full justify-center rounded-md bg-white px-3 py-2 text-sm font-semibold text-slate-900 shadow-sm ring-1 ring-inset ring-slate-300 hover:bg-slate-50 sm:mt-0 sm:w-auto">關閉</button></div></div></div></div></div>
+  <div id="modal" class="fixed inset-0 z-40 hidden">
+    <div class="fixed inset-0 bg-slate-900/50 backdrop-blur-sm" id="modalBackdrop"></div>
+    <div class="fixed inset-0 z-10 overflow-y-auto">
+        <div class="flex min-h-full items-end justify-center p-4 sm:items-center sm:p-0">
+            <div class="relative bg-white rounded-lg shadow-xl sm:w-full sm:max-w-2xl" id="modalPanel">
+                <div class="bg-white px-4 pb-4 pt-5 sm:p-6">
+                    <h3 class="text-xl font-bold text-slate-900" id="modalTitle">預覽</h3>
+                    <div class="mt-4 max-h-[60vh] overflow-y-auto custom-scroll p-4 bg-slate-50 rounded-lg text-sm text-slate-600" id="modalContent"></div>
+                </div>
+                <div id="modalFooter" class="bg-slate-50 px-4 py-3 sm:flex sm:flex-row-reverse sm:px-6 gap-2">
+                    <button id="modalActionBtn" class="inline-flex w-full justify-center rounded-md bg-brand-600 px-3 py-2 text-sm font-semibold text-white shadow-sm hover:bg-brand-500 sm:w-auto">建立檔案</button>
+                    <button id="modalCopyBtn" class="hidden inline-flex w-full justify-center rounded-md bg-white px-3 py-2 text-sm font-semibold text-slate-700 shadow-sm ring-1 ring-inset ring-slate-300 hover:bg-slate-50 sm:w-auto"><i class="fa-regular fa-copy mr-2"></i>複製文字</button>
+                    <button id="modalCloseBtn" class="mt-3 inline-flex w-full justify-center rounded-md bg-white px-3 py-2 text-sm font-semibold text-slate-900 shadow-sm ring-1 ring-inset ring-slate-300 hover:bg-slate-50 sm:mt-0 sm:w-auto">關閉</button>
+                </div>
+            </div>
+        </div>
+    </div>
+  </div>
+
   <div id="historyModal" class="fixed inset-0 z-40 hidden"><div class="fixed inset-0 bg-slate-900/50 backdrop-blur-sm" onclick="UI.closeHistory()"></div><div class="fixed inset-0 z-10 overflow-y-auto pointer-events-none"><div class="flex min-h-full items-center justify-center p-4"><div class="pointer-events-auto relative bg-white rounded-xl shadow-2xl w-full max-w-4xl max-h-[80vh] flex flex-col"><div class="p-4 border-b flex justify-between items-center"><h3 class="text-lg font-bold text-slate-800">歷史紀錄</h3><button onclick="UI.closeHistory()"><i class="fa-solid fa-xmark"></i></button></div><div class="p-0 overflow-y-auto custom-scroll flex-1 bg-slate-50" id="historyList"></div></div></div></div></div>
 
   <script>
-    // 主要邏輯區 (已將設定值移除，這裡會直接讀取上方的 GAS_URL)
     const Utils = { uuid:()=>crypto.randomUUID().split('-')[0], formatDate:(d)=>{if(!d)return'';const date=new Date(d);return isNaN(date)?d:date.toISOString().split('T')[0]}, getRankWeight:(r)=>{if(!r)return 999;const m={'金':10,'銀':20,'銅':30,'特優':40,'優等':50,'甲':60,'佳':70,'第一':1,'第二':2,'第三':3};for(let k in m)if(r.includes(k))return m[k];return 100} };
     const State = { rows:[], history:[], add(r){this.rows.unshift({...r,id:Utils.uuid(),checked:true});UI.renderList()}, remove(id){this.rows=this.rows.filter(r=>r.id!==id);UI.renderList()}, clear(){this.rows=[];UI.renderList()}, toggleCheck(id,s){const r=this.rows.find(x=>x.id===id);if(r)r.checked=s}, getChecked(){return this.rows.filter(r=>r.checked)} };
     
     const API = {
       async post(payload) {
-        // 使用定義在 Head 的 GAS_URL
         const formData = new URLSearchParams();
         for(const k in payload) formData.append(k, typeof payload[k]==='object'?JSON.stringify(payload[k]):payload[k]);
         const res = await fetch(GAS_URL, { method:'POST', body:formData });
@@ -160,13 +176,13 @@
     const UI = {
       els: {},
       init() {
-        ['inClass','inSeat','inName','inDate','inReason','inRank','inReward','btnAdd','tableBody','mobileList','q','btnEmcee','btnAward','btnClear','statusBadge','modal','modalTitle','modalContent','modalCloseBtn','modalActionBtn','historyModal','historyList','nameLoading','checkAll','dbLink'].forEach(id=>this.els[id]=document.getElementById(id));
+        ['inClass','inSeat','inName','inDate','inReason','inRank','inReward','btnAdd','tableBody','mobileList','q','btnEmcee','btnAward','btnClear','statusBadge','modal','modalTitle','modalContent','modalCloseBtn','modalActionBtn','modalCopyBtn','modalFooter','historyModal','historyList','nameLoading','checkAll','dbLink'].forEach(id=>this.els[id]=document.getElementById(id));
         this.els.btnAdd.onclick=()=>this.handleAdd();
         this.els.btnClear.onclick=()=>{if(confirm('清空？'))State.clear()};
         this.els.inClass.onblur=this.els.inSeat.onblur=()=>this.handleAutoName();
         this.els.q.oninput=()=>this.renderList();
-        this.els.btnEmcee.onclick=()=>this.handlePreview('司儀稿', API.createEmcee, (data)=>this.showSuccessLink(data.docUrl, '開啟文件'));
-        this.els.btnAward.onclick=()=>this.handlePreview('敘獎單', API.createAward, (data)=>this.showSuccessLink(data.pdfUrl, '開啟PDF'));
+        this.els.btnEmcee.onclick=()=>this.handleEmceePreview();
+        this.els.btnAward.onclick=()=>this.handleAwardPreview();
         this.els.modalCloseBtn.onclick=()=>this.closeModal();
         this.els.checkAll.onchange=(e)=>{State.rows.forEach(r=>r.checked=e.target.checked);this.renderList()};
         this.els.inDate.valueAsDate=new Date();
@@ -202,38 +218,112 @@
         this.els.mobileList.innerHTML=f.map(r=>`<div class="bg-white p-4 rounded shadow border flex gap-3 relative"><button onclick="State.remove('${r.id}')" class="absolute top-3 right-3 text-slate-300 hover:text-rose-500"><i class="fa-solid fa-trash"></i></button><div class="pt-1"><input type="checkbox" ${r.checked?'checked':''} onchange="State.toggleCheck('${r.id}',this.checked)" class="w-5 h-5"></div><div><div class="font-bold text-lg">${r.班級} (${r.座號}) ${r.姓名}</div><div class="text-slate-600">${r.事由}</div><div class="flex gap-2 mt-1"><span class="bg-blue-50 text-blue-600 text-xs px-2 py-1 rounded">${r.成績||''}</span><span class="bg-green-50 text-green-600 text-xs px-2 py-1 rounded">${r.獎懲種類||''}</span></div></div></div>`).join('');
         document.getElementById('emptyState').classList.toggle('hidden',f.length!==0);
       },
-      handlePreview(type, apiFunc, successCb) {
+
+      // 🔥 修改版：司儀稿處理邏輯
+      handleEmceePreview() {
         const sel = State.getChecked();
         if(!sel.length) return this.toast('請至少勾選一筆','error');
+        
+        const grp={}; sel.forEach(r=>{if(!grp[r.事由])grp[r.事由]=[];grp[r.事由].push(r)});
         let text = '';
-        if(type==='司儀稿') {
-           const grp={}; sel.forEach(r=>{if(!grp[r.事由])grp[r.事由]=[];grp[r.事由].push(r)});
-           for(let k in grp) text+=`${k}：\n`+grp[k].sort((a,b)=>Utils.getRankWeight(a.成績)-Utils.getRankWeight(b.成績)).map(x=>`${x.班級} ${x.姓名}`).join('、')+'。\n\n';
-        } else {
-           text = sel.map(r=>`${r.班級}-${r.座號} ${r.姓名} (${r.獎懲種類})`).join('<br>');
-        }
-        this.els.modalTitle.textContent = type + '預覽';
-        this.els.modalContent.innerHTML = text.replace(/\n/g,'<br>');
+        for(let k in grp) text+=`${k}：\n`+grp[k].sort((a,b)=>Utils.getRankWeight(a.成績)-Utils.getRankWeight(b.成績)).map(x=>`${x.班級} ${x.姓名}`).join('、')+'。\n\n';
+        
+        // 設定複製文字
+        this.els.modalCopyBtn.classList.remove('hidden');
+        this.els.modalCopyBtn.onclick = () => { navigator.clipboard.writeText(text); this.toast('已複製','success'); };
+        
+        // 呼叫模態窗，並傳入「執行動作」的回呼函式
+        this.openModal('司儀稿預覽', text.replace(/\n/g,'<br>'), async () => {
+           // 1. 呼叫 API
+           const res = await API.createEmcee(text);
+           if(res.status === 'success') {
+               // 2. 成功後，動態更換按鈕
+               this.updateModalButtonsAfterSuccess([
+                   { label: '開啟 Google 文件', url: res.data.docUrl, icon: 'file-word', color: 'blue' },
+                   { label: '匯出 PDF', url: res.data.pdfUrl, icon: 'file-pdf', color: 'red' }
+               ]);
+           } else {
+               this.toast('失敗: '+res.message, 'error');
+           }
+        });
+      },
+
+      // 🔥 修改版：敘獎單處理邏輯
+      handleAwardPreview() {
+        const sel = State.getChecked();
+        if(!sel.length) return this.toast('請至少勾選一筆','error');
+        
+        const text = sel.map(r=>`${r.班級}-${r.座號} ${r.姓名} (${r.獎懲種類})`).join('<br>');
+        
+        // 敘獎單通常不需要複製純文字，所以隱藏複製鈕
+        this.els.modalCopyBtn.classList.add('hidden');
+
+        this.openModal('敘獎單預覽', text, async () => {
+           const res = await API.createAward(sel);
+           if(res.status === 'success') {
+               this.updateModalButtonsAfterSuccess([
+                   { label: '開啟試算表', url: res.data.docUrl, icon: 'file-excel', color: 'emerald' },
+                   { label: '匯出 PDF', url: res.data.pdfUrl, icon: 'file-pdf', color: 'red' }
+               ]);
+           } else {
+               this.toast('失敗: '+res.message, 'error');
+           }
+        });
+      },
+
+      // 共用的開啟模態窗函式
+      openModal(title, htmlContent, actionCallback) {
+        this.els.modalTitle.textContent = title;
+        this.els.modalContent.innerHTML = htmlContent;
         this.els.modal.classList.remove('hidden');
+        
+        // 重置按鈕狀態
         const btn = this.els.modalActionBtn;
-        btn.innerHTML = '匯出'; btn.className = 'inline-flex w-full justify-center rounded-md bg-brand-600 px-3 py-2 text-sm font-semibold text-white shadow-sm hover:bg-brand-500 sm:w-auto';
+        btn.innerHTML = '建立檔案';
+        btn.className = 'inline-flex w-full justify-center rounded-md bg-brand-600 px-3 py-2 text-sm font-semibold text-white shadow-sm hover:bg-brand-500 sm:w-auto';
+        btn.classList.remove('hidden');
+        
+        // 綁定點擊事件
         btn.onclick = async () => {
-           btn.innerHTML = '處理中...'; btn.disabled = true;
+           btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin mr-2"></i>處理中...'; 
+           btn.disabled = true;
            try {
-              const res = await apiFunc(type==='司儀稿'?text:sel);
-              if(res.status==='success') successCb(res.data);
-              else this.toast('失敗: '+res.message, 'error');
-           } catch(e) { console.error(e); this.toast('系統錯誤','error'); } 
-           finally { btn.disabled=false; }
+              await actionCallback(); // 執行傳進來的 API 呼叫
+           } catch(e) { 
+              console.error(e); 
+              this.toast('系統錯誤','error'); 
+              btn.innerHTML = '重試';
+              btn.disabled = false;
+           }
         };
       },
-      showSuccessLink(url, label) {
-         const btn = this.els.modalActionBtn;
-         btn.innerHTML = `<i class="fa-solid fa-up-right-from-square"></i> ${label}`;
-         btn.className = 'inline-flex w-full justify-center rounded-md bg-emerald-600 px-3 py-2 text-sm font-semibold text-white shadow-sm hover:bg-emerald-500 sm:w-auto gap-2 items-center';
-         btn.onclick = () => window.open(url, '_blank');
-         this.toast('檔案已建立，請點擊按鈕開啟', 'success');
+
+      // 🔥 關鍵新功能：成功後動態生成多個按鈕
+      updateModalButtonsAfterSuccess(buttonsConfig) {
+        // 隱藏原本的「建立」與「複製」按鈕
+        this.els.modalActionBtn.classList.add('hidden');
+        this.els.modalCopyBtn.classList.add('hidden');
+
+        // 清除舊的動態按鈕 (如果有)
+        const oldBtns = this.els.modalFooter.querySelectorAll('.dynamic-btn');
+        oldBtns.forEach(b => b.remove());
+
+        // 插入新按鈕 (反向插入因為是用 prepend 或者 insertBefore，這裡我們直接插在 Close 按鈕前面)
+        buttonsConfig.forEach(cfg => {
+            const newBtn = document.createElement('button');
+            const colorClass = cfg.color === 'red' ? 'bg-rose-600 hover:bg-rose-700' : (cfg.color === 'emerald' ? 'bg-emerald-600 hover:bg-emerald-700' : 'bg-blue-600 hover:bg-blue-700');
+            
+            newBtn.className = `dynamic-btn inline-flex w-full justify-center rounded-md ${colorClass} px-3 py-2 text-sm font-semibold text-white shadow-sm sm:w-auto gap-2 items-center mr-2`;
+            newBtn.innerHTML = `<i class="fa-solid fa-${cfg.icon}"></i> ${cfg.label}`;
+            newBtn.onclick = () => window.open(cfg.url, '_blank');
+            
+            // 插在 footer 的第一個位置
+            this.els.modalFooter.insertBefore(newBtn, this.els.modalFooter.firstChild);
+        });
+
+        this.toast('檔案建立成功！', 'success');
       },
+
       closeModal(){this.els.modal.classList.add('hidden')},
       async openHistory(){
          this.els.historyModal.classList.remove('hidden'); this.els.historyList.innerHTML='載入中...';
